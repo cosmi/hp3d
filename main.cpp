@@ -55,7 +55,7 @@ void Cell<DIMS>::gatherIn(CellDict<DIMS> & dict) {
 template <int DIMS>
 void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
 
-  cout << "ENS " << id << endl;
+  cout << "?ENS " << id << endl;
   if(id.isRoot()) return;
   if(dict.getCell(id) != NULL) return;
   
@@ -64,7 +64,7 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
   cout << "ENS " << id << endl;
   ensureSplit(dict, parent);
 
-  cout << "ENS " << id << endl;
+  cout << "ENS! " << id << endl;
   
   Cell<DIMS> * c = dict.getCell(parent);
   
@@ -72,8 +72,8 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
   c->gatherIn(dict);
   
   FOR(dim, DIMS) {
-    auto a = id.getMovedId(dim, -1).getParentId();
-    auto b = id.getMovedId(dim, +1).getParentId();
+    auto a = parent.getMovedId(dim, -1);
+    auto b = parent.getMovedId(dim, +1);
     cout << "nei: " << a << "'" << a.isValid() << " " << endl;
     cout << "nei: " << b << "'" << b.isValid() << " " << endl;
     if(a.isValid()) ensureSplit(dict, a);
@@ -83,16 +83,15 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
 
 template<int DIMS>
 void printGrid(CellDict<DIMS> & dict) {
-  const int MAXP = 130;
+  const int MAXP = 34;
   char buff [MAXP+1][MAXP+1];
   FOR(i, MAXP+1) {
-    FOR(j, MAXP+1) buff[i][j]=0;
+    FOR(j, MAXP+1) buff[i][j]=(j==MAXP || i==MAXP)?0:' ';
   }
-  int lvl = dict.getCell(CellId<DIMS>())->getMaxLevel();
-  cout << lvl << endl;
+  int lvl = dict.getCell(CellId<DIMS>())->getMaxLevel() + 1;
+
   
   int offset = 1<<lvl;
-  
   for (auto el : dict) {
     Cell<DIMS> * c = el.second;
     if(!c->isLeaf()) continue;
@@ -100,10 +99,23 @@ void printGrid(CellDict<DIMS> & dict) {
     auto c1 = c->getCornerId(0, lvl);
     auto c2 = c->getCornerId(3, lvl);
     
-    cout << *c << " " << c1 << " " << c2 << endl;
+    // cout << *c << " " << c1 << " " << c2 << endl;
+    
+    int x = c1[0]-offset;
+    int y = c1[1]-offset;
+    int x1 = c2[0]-offset;
+    int y1 = c2[1]-offset;
+    if(x>=MAXP || y >= MAXP) continue;
+    // cout << "+ " << x << ", " << y <<endl;
+    buff[x][y] = '+';
+    if(x1<MAXP) buff[x1][y] = '+';
+    if(y1<MAXP) buff[x][y1] = '+';
+    if(x1<MAXP && y1<MAXP) buff[x1][y1] = '+';
     
   }
-  
+  FOR(i, MAXP) {
+    cout << buff[i] << endl;
+  }
 }
 
 
@@ -113,15 +125,13 @@ int main(int argc, char** argv) {
   Cell<DIM> c;
   cout << c.getId() << " <> " << c.getId().getChildId(0) << endl;
   c.print(cout);
-  c.split();
-  c.print(cout);
 
   CellDict<DIM> D;
   c.gatherIn(D);
   cout << D << endl;
   cout << "####" << endl;
   
-  auto target = c.getId().getChildId(0).getChildId(1).getChildId(0);
+  auto target = c.getId().getChildId(0).getChildId(1).getChildId(0).getChildId(0);
   cout << c.getId().getChildId(0) << endl;
   cout << c.getId().getChildId(0).getChildId(1) << endl;
   cout << target << " -> " << target.getParentId() << endl;

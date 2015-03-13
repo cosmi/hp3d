@@ -34,7 +34,6 @@ public:
   }
   
   Cell(Id cell_id) : id(cell_id) {
-    cout << "MAKE CELL " << id << endl;
     init();
   }
   
