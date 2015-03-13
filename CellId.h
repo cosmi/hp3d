@@ -29,6 +29,7 @@ string printBinary(id_int x, int digits) {
 template<int DIMS>
 class CellId {
   id_int id[DIMS];
+  size_t lvl;
 public:
   const id_int& operator[](size_t p) const {
     return id[p];
@@ -36,32 +37,101 @@ public:
   id_int& operator[](size_t p) {
     return id[p];
   }
-  CellId() {
+  
+  CellId(): lvl(0) {
     FOR(i, DIMS) id[i]=1;
   }
-  CellId(std::initializer_list<id_int> list ) {
+  CellId(std::initializer_list<id_int> list ):lvl(0) {
     int i = 0;
     for( auto elem: list) {
       id[i++] = elem;
     }
+    int k = id[0];
+    while(k>1) {
+      lvl++;
+      k>>=1;
+    }
   }
-  CellId&& getParent() const {
+  // CellId(const CellId& c):lvl(c.lvl) {
+  //   FOR(i, DIMS) id[i] = c[i];
+  // }
+  CellId(const CellId& c, int dim, int move):lvl(c.lvl) {
+    FOR(i, DIMS) {
+      id[i] = c[i];
+    }
+    id[dim] += move;
+  }
+
+  size_t getLevel() const {
+    return lvl;
+  }
+  bool isRoot() const {
+    return getLevel() == 0;
+  }
+  
+  CellId offsetBinary(size_t moveBy) const {
+    CellId c;
+    FOR(i, DIMS) {
+      int offset = (moveBy&(1<<i))!=0?1:0;
+      c[i] = id[i] + offset;
+    }
+    c.lvl = lvl;
+    return c;
+  }
+  CellId getChildId(size_t childId) const {
+    // CellId c;
+//     FOR(i, DIMS) {
+//       int offset = (childId&(1<<i))!=0?1:0;
+//       c[i] = 2 * id[i] + offset;
+//     }
+//     c.lvl = lvl + 1;
+    // return c;
+    return this->increaseLevelBy(1).offsetBinary(childId);
+  }
+  CellId getMovedId(int dim, int move) const {
+    return CellId(*this, dim, move);
+  }
+  bool isAncestorOf(const CellId& cell) const {
+    int delta = cell.getLevel() - getLevel();
+    if(delta <= 0) return false;
+    FOR(i, DIMS) {
+      if(cell[i]>>delta != id[i]) return false;
+    }
+    return true;
+  }
+  CellId increaseLevelBy(int lvls) const {
+    CellId c = *this;
+    c.lvl+=lvls;
+    FOR(i, DIMS) {
+      c[i] = this->id[i] << lvls;
+    }
+    return c;
+  }
+  
+  bool isValid() const {
+    id_int minv = 1<<getLevel();
+    id_int maxv = 1<<(getLevel()+1);
+    FOR(i, DIMS) {
+      if(id[i] < minv || id[i] >= maxv) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  CellId getParentId() const {
     CellId c;
     FOR(i, DIMS) {
       c[i] = id[i] >> 1;
     }
+    c.lvl = getLevel() - 1;
     return c;
   }
   void print(ostream& cout) const {
-    int lvl = 0;
-    int i = id[0];
-    while(i) {
-      lvl++;
-      i>>=1;
-    }
+    int digits = getLevel() + 1;
     FOR(i, DIMS) {
       if(i > 0) cout << ":";
-      cout << printBinary(id[i], lvl);
+      cout << printBinary(id[i], digits);
     }
   }
   bool operator< (const CellId<DIMS>& d) const {
@@ -77,6 +147,8 @@ public:
     }
     return true;
   }
+  
+  
 };
 
 

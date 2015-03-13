@@ -10,83 +10,7 @@
 
 using namespace std;
 #include "CellId.h"
-
-template <int DIMS>
-class CellDict;
-
-
-template<int DIMS>
-class Cell {
-  typedef CellId<DIMS> Id;
-  Id id;
-  int lvl;
-  Cell<DIMS>* subs[1<<DIMS];
-public:
-  
-  void init() {
-    FOR(i, 1<<DIMS) {
-      subs[i] = NULL;
-    }
-  }
-  Cell() : lvl(1) {
-    init();
-  }
-  
-  Cell(int cell_lvl, Id cell_id) : lvl(cell_lvl), id(cell_id) {
-    init();
-  }
-  
-  ~Cell() {
-    if(!isLeaf()) {
-      FOR(i, 1 << DIMS) {
-        delete subs[i];
-      }
-    }
-  }
-  
-  const Id& getId() const {
-    return id;
-  }
-  
-  
-  int subsCount() const {
-    return isLeaf()?0:(1<<DIMS);
-  }
-  
-  bool isLeaf() const {
-    return subs[0] == NULL;
-  }
-  void printId(ostream& cout) const {
-    FOR(i, DIMS) {
-      if(i > 0) cout << ":";
-      cout << printBinary(id[i], lvl);
-    }
-  }
-  void print(ostream& cout) const {
-    FOR(i, lvl) cout << ' ';
-    printId(cout);
-    if(isLeaf()) cout << " LEAF";
-    cout << endl;
-    FOR(i, subsCount()) {
-      subs[i]->print(cout);
-    }
-  }
-  
-  void split() {
-    Id chid;
-    FOR(j, 1<<DIMS) {
-      FOR(i, DIMS) {
-        int offset = (j&(1<<i))!=0?1:0;
-        chid[i] = 2 * id[i] + offset;
-      }
-      subs[j] = new Cell<DIMS>(lvl + 1, chid);
-    }
-    
-  }
-  
-  void gather(CellDict<DIMS>& map);
-  
-};
+#include "Cell.h"
 
 template <int DIMS>
 class CellDict: protected map<CellId<DIMS>, Cell<DIMS>* > {
@@ -97,18 +21,14 @@ public:
   void addCell(Cell<DIMS> * cellPtr) {
     this->insert(make_pair(cellPtr->getId(), cellPtr));
   };
+  
+  Cell<DIMS>* getCell(const CellId<DIMS>& id) const {
+    auto it = this->find(id);
+    if(it == this->end()) return NULL;
+    return it->second;
+  }
 
 };
-
-
-template <int DIMS>
-ostream& operator<<(ostream& os, const Cell<DIMS>& cell) {
-  os << '[';
-  cell.getId().print(os);
-  os << ']';
-  return os;
-}
-
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const CellDict<DIMS>& m)
@@ -122,28 +42,97 @@ ostream& operator<<(ostream& os, const CellDict<DIMS>& m)
 
 
 template <int DIMS>
-void Cell<DIMS>::gather(CellDict<DIMS> & dict) {
+void Cell<DIMS>::gatherIn(CellDict<DIMS> & dict) {
   dict.addCell(this);
-  if(!isLeaf()) {
-    FOR(i, subsCount()) {
-      subs[i]->gather(dict);
+  if(!this->isLeaf()) {
+    FOR(i, this->subsCount()) {
+      subs[i]->gatherIn(dict);
     }
   }
 }
 
-int main(int argc, char** argv) {
+
+template <int DIMS>
+void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
+
+  cout << "ENS " << id << endl;
+  if(id.isRoot()) return;
+  if(dict.getCell(id) != NULL) return;
   
-  Cell<3> c;
+  auto parent = id.getParentId();
+
+  cout << "ENS " << id << endl;
+  ensureSplit(dict, parent);
+
+  cout << "ENS " << id << endl;
+  
+  Cell<DIMS> * c = dict.getCell(parent);
+  
+  c->split();
+  c->gatherIn(dict);
+  
+  FOR(dim, DIMS) {
+    auto a = id.getMovedId(dim, -1).getParentId();
+    auto b = id.getMovedId(dim, +1).getParentId();
+    cout << "nei: " << a << "'" << a.isValid() << " " << endl;
+    cout << "nei: " << b << "'" << b.isValid() << " " << endl;
+    if(a.isValid()) ensureSplit(dict, a);
+    if(b.isValid()) ensureSplit(dict, b);
+  }
+}
+
+template<int DIMS>
+void printGrid(CellDict<DIMS> & dict) {
+  const int MAXP = 130;
+  char buff [MAXP+1][MAXP+1];
+  FOR(i, MAXP+1) {
+    FOR(j, MAXP+1) buff[i][j]=0;
+  }
+  int lvl = dict.getCell(CellId<DIMS>())->getMaxLevel();
+  cout << lvl << endl;
+  
+  int offset = 1<<lvl;
+  
+  for (auto el : dict) {
+    Cell<DIMS> * c = el.second;
+    if(!c->isLeaf()) continue;
+    
+    auto c1 = c->getCornerId(0, lvl);
+    auto c2 = c->getCornerId(3, lvl);
+    
+    cout << *c << " " << c1 << " " << c2 << endl;
+    
+  }
+  
+}
+
+
+const int DIM = 2;
+int main(int argc, char** argv) {
+
+  Cell<DIM> c;
+  cout << c.getId() << " <> " << c.getId().getChildId(0) << endl;
   c.print(cout);
-  cout << "####" << endl;
   c.split();
   c.print(cout);
-  CellDict<3> D;
 
-  c.gather(D);
-  D.addCell(&c);
+  CellDict<DIM> D;
+  c.gatherIn(D);
+  cout << D << endl;
+  cout << "####" << endl;
+  
+  auto target = c.getId().getChildId(0).getChildId(1).getChildId(0);
+  cout << c.getId().getChildId(0) << endl;
+  cout << c.getId().getChildId(0).getChildId(1) << endl;
+  cout << target << " -> " << target.getParentId() << endl;
+  
+  ensureSplit(D, target);
   cout << "####" << endl;
   cout << D;
   cout << endl;
+  cout << "####" << endl;
+  c.print(cout);
+  cout << c.countLeaves() << ' ' << c.countCells() << ' ' << c.getMaxLevel() << endl;;
+  printGrid(D);
   return 0;
 }
