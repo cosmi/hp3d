@@ -108,7 +108,7 @@ public:
     return c;
   }
   
-  CellId getAtLevel(int newLvl) const {
+  CellId withLevel(int newLvl) const {
     return increaseLevelBy(newLvl - lvl);
   }
   

@@ -168,7 +168,7 @@ public:
       set<Id> V1;
       Id c = getId().increaseLevelBy(1).offsetBinary((1<<DIMS)-1);
       FOR(i, DIMS) {
-        V1.insert(c.getHyperplane(i));
+        V1.insert(c.getHyperplane(i).withLevel(lvl));
       }
       FOR(i, subsCount()) {
         subs[i]->gatherHyperplanes(V1, lvl);
@@ -181,6 +181,7 @@ public:
       }
     }
   }
+  
 };
 
 template <int DIMS>
