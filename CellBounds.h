@@ -99,6 +99,21 @@ public:
     }
     return count;
   }
+  
+  Plane getHalvingPlane() const {
+    // selects plane that will divide the bounds in half in the longest direction
+    // in case of tie, the earlier dim will be prefered
+    int maxv = b[0] - a[0];
+    int maxidx = 0;
+    FOR(i, DIMS) {
+      int v = b[i] - a[i];
+      if(v > maxv) {
+        maxv = v;
+        maxidx = i;
+      }
+    }
+    return Plane(maxidx, a[maxidx] + b[maxidx], getLevel()+1);
+  }
 };
 
 

@@ -195,11 +195,11 @@ public:
     c.lvl = getLevel() - 1;
     return c;
   }
-  void print(ostream& cout) const {
+  void print(ostream& cerr) const {
     int digits = getLevel() + 2;
     FOR(i, DIMS) {
-      if(i > 0) cout << ":";
-      cout << printBinary(id[i], digits);
+      if(i > 0) cerr << ":";
+      cerr << printBinary(id[i], digits);
     }
   }
   bool operator< (const CellId<DIMS>& d) const {
@@ -249,6 +249,17 @@ public:
     }
     return true;
   }
+  
+  int compareWithHyperplane(Hyperplane<DIMS> hp) const {
+    if (hp.getLevel() < getLevel()) {
+      hp = hp.withLevel(getLevel());
+    } else if (hp.getLevel() > getLevel()) {
+      return this->withLevel(hp.getLevel()).compareWithHyperplane(hp);
+    }
+    int dim = hp.getDim();
+    return (id[dim] - hp.getValue());
+  }
+  
 };
 
 template <int DIMS>

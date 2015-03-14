@@ -23,6 +23,7 @@ public:
   typename sourceMap::const_iterator end() const {return sourceMap::end();}
   typename sourceMap::iterator begin() {return sourceMap::begin();}
   typename sourceMap::iterator end() {return sourceMap::end();}
+  size_t size() const {return sourceMap::size();}
 
   void addCell(Cell<DIMS> * cellPtr) {
     bounds = bounds.join(cellPtr->getBounds());
@@ -61,10 +62,10 @@ public:
 template <int DIMS>
 ostream& operator<<(ostream& os, const CellDict<DIMS>& m)
 {
-  cout << m.getBounds();
+  cerr << m.getBounds();
   for(auto el : m) {
-    cout << *el.second;
-    cout << ' ';
+    cerr << *el.second;
+    cerr << ' ';
   }
   return os;
 }
@@ -93,16 +94,16 @@ void Cell<DIMS>::shallowGatherIn(CellDict<DIMS> & dict) {
 template <int DIMS>
 void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
 
-  cout << "?ENS " << id << endl;
+  cerr << "?ENS " << id << endl;
   if(id.isRoot()) return;
   if(dict.getCell(id) != NULL) return;
   
   auto parent = id.getParentId();
 
-  cout << "ENS " << id << endl;
+  cerr << "ENS " << id << endl;
   ensureSplit(dict, parent);
 
-  cout << "ENS! " << id << endl;
+  cerr << "ENS! " << id << endl;
   
   Cell<DIMS> * c = dict.getCell(parent);
   
@@ -112,15 +113,15 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
   FOR(dim, DIMS) {
     auto a = parent.getMovedId(dim, -1);
     auto b = parent.getMovedId(dim, +1);
-    cout << "nei: " << a << "'" << a.isValidCellId() << " " << endl;
-    cout << "nei: " << b << "'" << b.isValidCellId() << " " << endl;
+    cerr << "nei: " << a << "'" << a.isValidCellId() << " " << endl;
+    cerr << "nei: " << b << "'" << b.isValidCellId() << " " << endl;
     if(a.isValidCellId()) ensureSplit(dict, a);
     if(b.isValidCellId()) ensureSplit(dict, b);
   }
 }
 
 template<int DIMS>
-void printGrid(CellDict<DIMS> & dict, int lvl) {
+void printGrid(const CellDict<DIMS> & dict, int lvl) {
   const int MAXP = 34;
   char buff [MAXP+1][MAXP+1];
   FOR(i, MAXP+1) {
@@ -128,6 +129,7 @@ void printGrid(CellDict<DIMS> & dict, int lvl) {
   }
 
   int offset = 1<<lvl;
+  int maxrow = 0;
   for (auto el : dict) {
     Cell<DIMS> * c = el.second;
     if(!c->isLeaf()) continue;
@@ -135,28 +137,29 @@ void printGrid(CellDict<DIMS> & dict, int lvl) {
     auto c1 = c->getCornerId(0, lvl);
     auto c2 = c->getCornerId(3, lvl);
     
-    // cout << *c << " " << c1 << " " << c2 << endl;
+    // cerr << *c << " " << c1 << " " << c2 << endl;
     
     int x = c1[0]-offset;
     int y = c1[1]-offset;
     int x1 = c2[0]-offset;
     int y1 = c2[1]-offset;
     if(x>=MAXP || y >= MAXP) continue;
-    // cout << "+ " << x << ", " << y <<endl;
+    // cerr << "+ " << x << ", " << y <<endl;
     buff[x][y] = '+';
+
     if(x1<MAXP) buff[x1][y] = '+';
     if(y1<MAXP) buff[x][y1] = '+';
     if(x1<MAXP && y1<MAXP) buff[x1][y1] = '+';
-    
+    maxrow = max(x1+1, maxrow);    
   }
-  FOR(i, MAXP) {
-    cout << buff[i] << endl;
+  FOR(i, min(maxrow+2,MAXP)) {
+    cerr << buff[i] << endl;
   }
 }
 
 template<int DIMS>
 void Cell<DIMS>::divideByHyperplane(Plane hyperplane, Dict& a, Dict& b){
-  cout << *this << " hyp:" << hyperplane << " CROSS:" << crossesHyperplane(hyperplane) << endl;
+  cerr << *this << " hyp:" << hyperplane << " CROSS:" << crossesHyperplane(hyperplane) << endl;
   if(crossesHyperplane(hyperplane)) {
     assert(!isLeaf());
     FOR(i, subsCount()) {

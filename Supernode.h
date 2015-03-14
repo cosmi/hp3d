@@ -149,14 +149,14 @@ set<Supernode<DIMS> > calculateNodes(const CellDict<DIMS>& dict) {
   auto bounds = dict.getBounds();
   
   map<CellId<DIMS>, pair<int,int> > M;
-  cout << "BOUNDS " << bounds << endl;
+  cerr << "BOUNDS " << bounds << endl;
   for(auto it : dict) if(it.second->isLeaf()) {
     auto & cell = *(it.second);
     auto nodes = inducedNodes(cell);
     for(auto node : nodes) {
       // int boundsDim = node.countBoundsHyperplanes(bounds);
       // auto n = node.withBoundsDim(boundsDim);
-      // cout<< "ADD " << node << " " << node.boundsDim << endl;
+      // cerr<< "ADD " << node << " " << node.boundsDim << endl;
 //      hits[]+=;
       auto& p = M[node.getId()];
       p.first += 1<<node.getType(); // number of hits 
@@ -174,10 +174,26 @@ set<Supernode<DIMS> > calculateNodes(const CellDict<DIMS>& dict) {
       S.insert(node);
     } else {
       // S.insert(node);
-      cout << "ELIMINATED: " << node << " ONLY " << hits << " HITS "<< endl;
+      cerr << "ELIMINATED: " << node << " ONLY " << hits << " HITS "<< endl;
     }
   }
   return S;
+}
+
+
+template <int DIMS>
+pair<set<Supernode<DIMS> >, set<Supernode<DIMS> > > divideByHyperplane(
+    const set<Supernode<DIMS> > & nodes, 
+    Hyperplane<DIMS> hp) {
+  pair<set<Supernode<DIMS> >, set<Supernode<DIMS> > > res;
+  for(auto node: nodes) {
+    int cmp = node.getId().compareWithHyperplane(hp);
+    
+    if(cmp >= 0) res.second.insert(node);
+    if(cmp <= 0) res.first.insert(node);
+  }
+  
+  return res;
 }
 
 
@@ -193,16 +209,16 @@ void printGrid(set<Supernode<DIMS> > & S, int lvl) {
   for (auto el : S) {
     auto c = el.getId().withLevel(lvl);
     
-    // cout << *c << " " << c1 << " " << c2 << endl;
+    // cerr << *c << " " << c1 << " " << c2 << endl;
     
     int x = c[0]-offset;
     int y = c[1]-offset;
     if(x>=MAXP || y >= MAXP) continue;
-    // cout << "+ " << x << ", " << y <<endl;
+    // cerr << "+ " << x << ", " << y <<endl;
     buff[x][y] = '*';    
   }
   FOR(i, MAXP) {
-    cout << buff[i] << endl;
+    cerr << buff[i] << endl;
   }
 }
 

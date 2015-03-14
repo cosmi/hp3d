@@ -70,13 +70,13 @@ public:
   bool isLeaf() const {
     return subs[0] == NULL;
   }
-  void print(ostream& cout) const {
-    FOR(i, getLevel()) cout << ' ';
-    cout << getId();
-    if(isLeaf()) cout << " LEAF";
-    cout << endl;
+  void print(ostream& cerr) const {
+    FOR(i, getLevel()) cerr << ' ';
+    cerr << getId();
+    if(isLeaf()) cerr << " LEAF";
+    cerr << endl;
     FOR(i, subsCount()) {
-      subs[i]->print(cout);
+      subs[i]->print(cerr);
     }
   }
   
