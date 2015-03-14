@@ -148,6 +148,14 @@ public:
     }
     return c;
   }
+  CellId decreaseLevelBy(int lvls) const {
+    CellId c = *this;
+    c.lvl-=lvls;
+    FOR(i, DIMS) {
+      c[i] = this->id[i] >> lvls;
+    }
+    return c;
+  }
   
   CellId withLevel(int newLvl) const {
     return increaseLevelBy(newLvl - lvl);
@@ -208,10 +216,57 @@ public:
     return true;
   }
   
+  CellId toCanonical() const {
+    int tgtLvl = lvl;
+    while(tgtLvl > 0) {
+      bool okay = true;
+      int delta = lvl - tgtLvl + 1;
+      int mask = (1<<delta)-1;
+      FOR(i, DIMS) {
+        if(mask & id[i]) {
+          okay=false;
+          break;
+        }
+      }
+      if(okay) {
+        tgtLvl --;
+      } else {
+        break;
+      }
+    }
+    return decreaseLevelBy(lvl - tgtLvl);
+  }
   
+  bool isNotLargerThan(const CellId& c) const {
+    FOR(i, DIMS) {
+      if(c[i]<id[i]) return false;
+    }
+    return true;
+  }
 };
 
+template <int DIMS>
+int countCommonHyperplanes(const CellId<DIMS>& a, const CellId<DIMS>& b) {
+  int count = 0;
+  FOR(i, DIMS) {
+    if(a[i] == b[i]) count ++;
+  }
+  return count;
+}
 
+template <int DIMS>
+CellId<DIMS> middle(CellId<DIMS> a, CellId<DIMS> b) {
+  int tgtLvl = max(a.getLevel(), b.getLevel()) + 1;
+  a = a.withLevel(tgtLvl);
+  b = b.withLevel(tgtLvl);
+  CellId<DIMS> c=a;
+  FOR(i, DIMS) {
+    id_int mid = (a[i] + b[i]);
+    assert((mid&1) == 0);
+    c[i] = mid/2;
+  }
+  return c.toCanonical();
+}
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const CellId<DIMS>& cell) {

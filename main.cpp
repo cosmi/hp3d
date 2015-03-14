@@ -16,12 +16,14 @@ using namespace std;
 #include "CellBounds.h"
 #include "Cell.h"
 #include "CellDict.h"
+#include "Supernode.h"
 
 const int DIM = 2;
 int main(int argc, char** argv) {
 
   Cell<DIM> c;
   cout << c.getId() << " <> BNDS:" << c.getBounds() << endl;
+  cout << inducedNodes(c);
   c.print(cout);
 
   CellDict<DIM> D;
@@ -29,10 +31,6 @@ int main(int argc, char** argv) {
   cout << D << endl;
   cout << "####" << endl;
   
-  auto target = c.getId().getChildId(0).getChildId(0).getChildId(0);
-  cout << c.getId().getChildId(0) << endl;
-  cout << c.getId().getChildId(0).getChildId(1) << endl;
-  cout << target << " -> " << target.getParentId() << endl;
   int lvl = 4;
   int offset = 1<<lvl;
   FOR(i, offset) {

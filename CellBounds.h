@@ -84,6 +84,14 @@ public:
     }
     return true;
   }
+  
+  int countHyperplanes(Id id) const {
+    int count = 0;
+    FOR(i, DIMS) {
+      if(a[i] == id[i] || b[i] == id[i]) count++;
+    }
+    return count;
+  }
 };
 
 

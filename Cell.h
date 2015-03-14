@@ -17,7 +17,8 @@ using namespace std;
 
 template <int DIMS>
 class CellDict;
-
+template <int DIMS>
+class Supernode;
 
 template<int DIMS>
 class Cell {
@@ -63,6 +64,8 @@ public:
   int subsCount() const {
     return isLeaf()?0:(1<<DIMS);
   }
+  
+  
   
   bool isLeaf() const {
     return subs[0] == NULL;
@@ -110,7 +113,9 @@ public:
     }
     return m;
   }
-  
+  Id getCornerId(int cornerId) const {
+    return getId().offsetBinary(cornerId);
+  }
   Id getCornerId(int cornerId, int atLevel) const {
     int delta = atLevel - getLevel();
     auto c = getId().offsetBinary(cornerId);
@@ -120,8 +125,12 @@ public:
   Id getZeroCornerAt(int atLevel) const {
     return getCornerId(0, atLevel);
   }
+  
+  int countCorners() const {
+    return (1<<DIMS);
+  }
   Id getLastCornerAt(int atLevel) const {
-    return getCornerId((1<<DIMS)-1, atLevel);
+    return getCornerId(countCorners()-1, atLevel);
   }
   
   void gatherIn(CellDict<DIMS>& map);
