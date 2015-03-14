@@ -205,6 +205,9 @@ public:
     if(targetLvl == -1) targetLvl = getLevel();
     return Bounds(getZeroCornerAt(targetLvl), getLastCornerAt(targetLvl));
   }
+  Cell& getChild(int childId) {
+    return *(subs[childId]);
+  }
 };
 
 template <int DIMS>

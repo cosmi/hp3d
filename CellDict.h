@@ -62,10 +62,11 @@ public:
 template <int DIMS>
 ostream& operator<<(ostream& os, const CellDict<DIMS>& m)
 {
-  cerr << m.getBounds();
+  
+  os << m.getBounds();
   for(auto el : m) {
-    cerr << *el.second;
-    cerr << ' ';
+    os << *el.second;
+    os << ' ';
   }
   return os;
 }

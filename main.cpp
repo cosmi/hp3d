@@ -22,7 +22,10 @@ typedef long long result_int;
 result_int flopsFun(result_int a, result_int b) {
   // a - eliminated
   // b - total
-  return a * (6*b*b - 6*a*b + 6*b + 2*a*a - 3*a + 1)/6;
+  result_int res = (a * (6*b*b - 6*a*b + 6*b + 2*a*a - 3*a + 1))/6;
+  // cout << "CALC f(" << a << "," << b << ") = " <<
+  //   res << endl;
+  return res;
 }
 
 template <int DIMS>
@@ -192,9 +195,29 @@ void outputResultsForSingularities() {
   }
 }
 
-const int DIM = 2;
+void sampleCalc() {
+  const int DIMS = 2;
+  Cell<DIMS> c;
+  CellDict<DIMS> D;
+  c.split();
+  c.getChild(0).gatherIn(D);
+  c.getChild(1).gatherIn(D);
+  cout << "SET: " <<D.size() << " " << D << "!" << endl;
+  cout << "EXAMPLE RES: " << calculateHalfDivCost(D) << endl;
+}
+
+
 int main(int argc, char** argv) {
-  outputResultsForSingularities();
+  FOR(i , 11) {
+    FOR(j, 11) {
+      cout << flopsFun(i, j) << '\t';
+    }
+    cout << endl;
+  } 
+  
+  cout << "MAM:" << flopsFun(6, 9) << endl;
+  sampleCalc();
+  // outputResultsForSingularities();
   //
   // Cell<DIM> c;
   // cerr << c.getId() << " <> BNDS:" << c.getBounds() << endl;
