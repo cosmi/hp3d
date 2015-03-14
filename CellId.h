@@ -82,7 +82,7 @@ public:
   }
   
   CellId(): lvl(0) {
-    FOR(i, DIMS) id[i]=1;
+    FOR(i, DIMS) id[i]=ROOT_ID;
   }
   CellId(std::initializer_list<id_int> list ):lvl(0) {
     int i = 0;
@@ -102,9 +102,7 @@ public:
       id[i++] = elem;
     }
   }
-  // CellId(const CellId& c):lvl(c.lvl) {
-  //   FOR(i, DIMS) id[i] = c[i];
-  // }
+  
   CellId(const CellId& c, int dim, int move):lvl(c.lvl) {
     FOR(i, DIMS) {
       id[i] = c[i];
@@ -129,13 +127,6 @@ public:
     return c;
   }
   CellId getChildId(size_t childId) const {
-    // CellId c;
-//     FOR(i, DIMS) {
-//       int offset = (childId&(1<<i))!=0?1:0;
-//       c[i] = 2 * id[i] + offset;
-//     }
-//     c.lvl = lvl + 1;
-    // return c;
     return this->increaseLevelBy(1).offsetBinary(childId);
   }
   CellId getMovedId(int dim, int move) const {
@@ -184,26 +175,7 @@ public:
     return true;
   }
   
-  // bool isValidHyperplaneId() const {
-//     id_int minv = 1<<getLevel();
-//     id_int maxv = 1<<(getLevel()+1);
-//     int zeros = 0;
-//     FOR(i, DIMS) {
-//       if(id[i] == 0) {
-//         zeros++;
-//       } else if(id[i] < minv || id[i] >= maxv) {
-//         return false;
-//       }
-//     }
-//     return zeros == DIMS-1;
-//   }
   Hyperplane<DIMS> getHyperplane(int dim) {
-    // CellId c;
-//     c.lvl = this->lvl;
-//     FOR(i, DIMS) {
-//       c[i] = 0;
-//     }
-//     c[dim] = id[dim];
     return Hyperplane<DIMS>(dim, id[dim], lvl);
   }
   

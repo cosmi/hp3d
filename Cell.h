@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 #include <set>
-#include <assert.h>
 
 #define FOR(x, n) for(int x = 0, __n = (n); x < __n; x++)
 #define FORI(x, a, n) for(int x = (a), __n = (n); x < __n; x++)
@@ -25,6 +24,7 @@ class Cell {
   using Id = CellId<DIMS>;
   using Dict = CellDict<DIMS>;
   using Plane = Hyperplane<DIMS>;
+  using Bounds = CellBounds<DIMS>;
   Id id;
   Cell<DIMS>* subs[1<<DIMS];
   
@@ -152,7 +152,6 @@ public:
   }
   
   void gatherHyperplanes(set<Plane>& V, int lvl, map<Id, set<Plane> >& cache) const {
-    cout << "REC " << *this << " " << lvl << endl;
     if(isLeaf() || lvl == this->getLevel()) {
     } else {
       set<Plane> & hyperplanes = cache[getId()];
@@ -166,7 +165,6 @@ public:
           subs[i]->gatherHyperplanes(V1, lvl, cache);
         }
         for(auto el : V1) {
-          cout << "CHECK " << *this << ": " << el << " = " << isValidHyperplane(el) << endl;
           if(isValidHyperplane(el)) {
             hyperplanes.insert(el);
           }
@@ -194,13 +192,19 @@ public:
   
   void divideByHyperplane(Plane hyperplane, Dict& a, Dict& b);
   
-  
+  Bounds getBounds(int targetLvl = -1) const {
+    if(targetLvl == -1) targetLvl = getLevel();
+    return Bounds(getZeroCornerAt(targetLvl), getLastCornerAt(targetLvl));
+  }
 };
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const Cell<DIMS>& cell) {
   os << '[';
   cell.getId().print(os);
+  if(cell.isLeaf()) {
+    os << "+LEAF";
+  }
   os << ']';
   return os;
 }

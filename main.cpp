@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <map>
 #include <set>
+
+#include <assert.h>
 #define FOR(x, n) for(int x = 0, __n = (n); x < __n; x++)
 #define FORI(x, a, n) for(int x = (a), __n = (n); x < __n; x++)
 #define FORR(x, n) for(int x = (n)-1; x >= 0; x--)
@@ -11,12 +13,13 @@
 
 using namespace std;
 #include "CellId.h"
-// #include "CellBounds.h"
+#include "CellBounds.h"
 #include "Cell.h"
 
 template <int DIMS>
 class CellDict: protected map<CellId<DIMS>, Cell<DIMS>* > {
   using sourceMap = map<CellId<DIMS>, Cell<DIMS>* >;
+  CellBounds<DIMS> bounds;
 public:
   typename sourceMap::const_iterator begin() const {return sourceMap::begin();}
   typename sourceMap::const_iterator end() const {return sourceMap::end();}
@@ -24,7 +27,9 @@ public:
   typename sourceMap::iterator end() {return sourceMap::end();}
 
   void addCell(Cell<DIMS> * cellPtr) {
+    bounds = bounds.join(cellPtr->getBounds());
     this->insert(make_pair(cellPtr->getId(), cellPtr));
+    
   };
   
   Cell<DIMS>* getCell(const CellId<DIMS>& id) const {
@@ -35,7 +40,6 @@ public:
 
   pair<CellDict, CellDict> divideByHyperplane(Hyperplane<DIMS> hyperplane) const {
     pair<CellDict, CellDict> res;
-    cout << hyperplane << "!!!" << endl;
     for(auto el : *this) {
       el.second->divideByHyperplane(hyperplane, res.first, res.second);
     }
@@ -47,11 +51,19 @@ public:
       el.second->gatherIn(*this);
     }
   }
+  const CellBounds<DIMS>& getBounds() const {
+    return bounds;
+  }
+  
+  void setBoundsLevel(int lvl) {
+    bounds = bounds.withLevel(lvl);
+  }
 };
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const CellDict<DIMS>& m)
 {
+  cout << m.getBounds();
   for(auto el : m) {
     cout << *el.second;
     cout << ' ';
@@ -117,8 +129,6 @@ void printGrid(CellDict<DIMS> & dict, int lvl) {
     FOR(j, MAXP+1) buff[i][j]=(j==MAXP || i==MAXP)?0:' ';
   }
 
-
-  cout << "DUPA" << endl;
   int offset = 1<<lvl;
   for (auto el : dict) {
     Cell<DIMS> * c = el.second;
@@ -166,7 +176,7 @@ const int DIM = 2;
 int main(int argc, char** argv) {
 
   Cell<DIM> c;
-  cout << c.getId() << " <> " << c.getId().getChildId(0) << endl;
+  cout << c.getId() << " <> BNDS:" << c.getBounds() << endl;
   c.print(cout);
 
   CellDict<DIM> D;
