@@ -125,6 +125,7 @@ public:
   
   void gatherIn(CellDict<DIMS>& map);
   
+  void shallowGatherIn(CellDict<DIMS>& map);
   
   bool isHyperplaneOffBounds(const Id& c) const {
     Id c1 = getZeroCornerAt(c.getLevel());
@@ -206,7 +207,9 @@ public:
     }
   }
   
-  void divideByHyperplane(Id hyperplane, Dict& a, Dict& b) const;
+  void divideByHyperplane(Id hyperplane, Dict& a, Dict& b);
+  
+  
 };
 
 template <int DIMS>

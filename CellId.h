@@ -52,6 +52,13 @@ public:
       k>>=1;
     }
   }
+  
+  CellId(std::initializer_list<id_int> list, int cell_lvl ):lvl(cell_lvl) {
+    int i = 0;
+    for( auto elem: list) {
+      id[i++] = elem;
+    }
+  }
   // CellId(const CellId& c):lvl(c.lvl) {
   //   FOR(i, DIMS) id[i] = c[i];
   // }
