@@ -23,8 +23,10 @@ class CellDict;
 template<int DIMS>
 class Cell {
   typedef CellId<DIMS> Id;
+  typedef CellDict<DIMS> Dict;
   Id id;
   Cell<DIMS>* subs[1<<DIMS];
+  
 public:
   
   void init() {
@@ -154,7 +156,7 @@ public:
     }
   }
   
-  void gatherHyperplanes(set<Id>& V, int lvl) const {
+  void gatherHyperplanes(set<Id>& V, int lvl, map<Id, set<Id> >& cache) const {
     cout << "REC " << *this << " " << lvl << endl;
     if(isLeaf() || lvl == this->getLevel()) {
       // Id c1 = getZeroCornerAt(lvl);
@@ -165,23 +167,46 @@ public:
       //   V.insert(c2.getHyperplane(i));
       // }
     } else {
-      set<Id> V1;
-      Id c = getId().increaseLevelBy(1).offsetBinary((1<<DIMS)-1);
-      FOR(i, DIMS) {
-        V1.insert(c.getHyperplane(i).withLevel(lvl));
-      }
-      FOR(i, subsCount()) {
-        subs[i]->gatherHyperplanes(V1, lvl);
-      }
-      for(auto el : V1) {
-        cout << "CHECK " << *this << ": " << el << " = " << isValidHyperplane(el) << endl;
-        if(isValidHyperplane(el)) {
-          V.insert(el);
+      set<Id> & hyperplanes = cache[getId()];
+      if(hyperplanes.empty()) {
+        set<Id> V1;
+        Id c = getId().increaseLevelBy(1).offsetBinary((1<<DIMS)-1);
+        FOR(i, DIMS) {
+          V1.insert(c.getHyperplane(i).withLevel(lvl));
+        }
+        FOR(i, subsCount()) {
+          subs[i]->gatherHyperplanes(V1, lvl, cache);
+        }
+        for(auto el : V1) {
+          cout << "CHECK " << *this << ": " << el << " = " << isValidHyperplane(el) << endl;
+          if(isValidHyperplane(el)) {
+            hyperplanes.insert(el);
+          }
         }
       }
+      for(auto el: hyperplanes) {
+        V.insert(el);
+      }
+    }
+    
+  }
+  bool overHyperplane(Id hyperplane) const {
+    FOR(i, DIMS) {
+      if(hyperplane[i] == 0) continue;
+      Id c = getId().withLevel(hyperplane.getLevel());
+      return c[i] >= hyperplane[i];
+    }
+  }
+  bool crossesHyperplane(Id hyperplane) const {
+    Id c1 = getZeroCornerAt(hyperplane.getLevel()).withLevel(hyperplane.getLevel());
+    Id c2 = getLastCornerAt(hyperplane.getLevel()).withLevel(hyperplane.getLevel());
+    FOR(i, DIMS) {
+      if(hyperplane[i] == 0) continue;
+      return hyperplane[i] > c1[i] && hyperplane[i] < c2[i];
     }
   }
   
+  void divideByHyperplane(Id hyperplane, Dict& a, Dict& b) const;
 };
 
 template <int DIMS>

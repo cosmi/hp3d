@@ -118,7 +118,21 @@ void printGrid(CellDict<DIMS> & dict) {
     cout << buff[i] << endl;
   }
 }
-
+template<int DIMS>
+void Cell<DIMS>::divideByHyperplane(Id hyperplane, Dict& a, Dict& b) const {
+  if(crossesHyperplane(hyperplane)) {
+    assert(!isLeaf());
+    FOR(i, subsCount()) {
+      subs[i]->divideByHyperplane(hyperplane, a, b);
+    }
+  } else {
+    if(overHyperplane(hyperplane)) {
+      b.addCell(*this);
+    } else {
+      a.addCell(*this);
+    }
+  }
+}
 
 const int DIM = 2;
 int main(int argc, char** argv) {
@@ -136,10 +150,10 @@ int main(int argc, char** argv) {
   cout << c.getId().getChildId(0) << endl;
   cout << c.getId().getChildId(0).getChildId(1) << endl;
   cout << target << " -> " << target.getParentId() << endl;
-  int lvl = 3;
+  int lvl = 4;
   int offset = 1<<lvl;
-  FOR(i,offset) {
-    ensureSplit(D, CellId<DIM>({offset+i, offset}));
+  FOR(i, offset) {
+    ensureSplit(D, CellId<DIM>({offset+i, offset+4}));
   }
   
   // ensureSplit(D, target);
@@ -152,7 +166,8 @@ int main(int argc, char** argv) {
   printGrid(D);
   
   set<CellId<DIM> > S;
-  c.gatherHyperplanes(S, c.getMaxLevel());
+  map<CellId<DIM>, set<CellId<DIM> > > cache;
+  c.gatherHyperplanes(S, c.getMaxLevel(), cache);
   for(auto el : S) {
     cout << ")" << el << endl;
   }
