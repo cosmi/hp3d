@@ -157,15 +157,19 @@ public:
   void gatherHyperplanes(set<Id>& V, int lvl) const {
     cout << "REC " << *this << " " << lvl << endl;
     if(isLeaf() || lvl == this->getLevel()) {
-      Id c1 = getZeroCornerAt(lvl);
-      Id c2 = getLastCornerAt(lvl);
-      FOR(i, DIMS) {
-        cout << "INS " << c1.getHyperplane(i) << " " << c2.getHyperplane(i) << endl;
-        V.insert(c1.getHyperplane(i));
-        V.insert(c2.getHyperplane(i));
-      }
+      // Id c1 = getZeroCornerAt(lvl);
+      // Id c2 = getLastCornerAt(lvl);
+      // FOR(i, DIMS) {
+      //   cout << "INS " << c1.getHyperplane(i) << " " << c2.getHyperplane(i) << endl;
+      //   V.insert(c1.getHyperplane(i));
+      //   V.insert(c2.getHyperplane(i));
+      // }
     } else {
       set<Id> V1;
+      Id c = getId().increaseLevelBy(1).offsetBinary((1<<DIMS)-1);
+      FOR(i, DIMS) {
+        V1.insert(c.getHyperplane(i));
+      }
       FOR(i, subsCount()) {
         subs[i]->gatherHyperplanes(V1, lvl);
       }
