@@ -126,7 +126,7 @@ vector<Supernode<DIMS> > inducedNodes(Cell<DIMS> cell) {
 
 template <typename Container>
 void printCollectionToStream(ostream& os, const Container& nodes, const char* prefix) {
-  os << "[[" << prefix << ":";
+  os << "[[" << prefix << "(" << nodes.size() << ")" <<":";
   for(auto el: nodes) {
     os << el << " ";
   }

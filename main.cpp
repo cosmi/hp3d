@@ -18,7 +18,7 @@ using namespace std;
 #include "CellDict.h"
 #include "Supernode.h"
 
-const int DIM = 2;
+const int DIM = 3;
 int main(int argc, char** argv) {
 
   Cell<DIM> c;
@@ -31,12 +31,13 @@ int main(int argc, char** argv) {
   cout << D << endl;
   cout << "####" << endl;
   
-  int lvl = 2;
+  int lvl = 1;
   int offset = 1<<lvl;
   // FOR(i, offset) {
-  //   ensureSplit(D, CellId<DIM>({offset+i, offset+4}));
+  //   cout << "STEP " << i << endl;
+  //   ensureSplit(D, CellId<DIM>({offset+i, offset+0, offset+0}));
   // }
-  ensureSplit(D, CellId<DIM>({offset, offset}));
+  ensureSplit(D, CellId<DIM>({offset, offset, offset}));
   auto nodes = calculateNodes(D);
   
   cout << nodes << endl;
