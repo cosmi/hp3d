@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <set>
 #define FOR(x, n) for(int x = 0, __n = (n); x < __n; x++)
 #define FORI(x, a, n) for(int x = (a), __n = (n); x < __n; x++)
 #define FORR(x, n) for(int x = (n)-1; x >= 0; x--)
@@ -74,10 +75,10 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
   FOR(dim, DIMS) {
     auto a = parent.getMovedId(dim, -1);
     auto b = parent.getMovedId(dim, +1);
-    cout << "nei: " << a << "'" << a.isValid() << " " << endl;
-    cout << "nei: " << b << "'" << b.isValid() << " " << endl;
-    if(a.isValid()) ensureSplit(dict, a);
-    if(b.isValid()) ensureSplit(dict, b);
+    cout << "nei: " << a << "'" << a.isValidCellId() << " " << endl;
+    cout << "nei: " << b << "'" << b.isValidCellId() << " " << endl;
+    if(a.isValidCellId()) ensureSplit(dict, a);
+    if(b.isValidCellId()) ensureSplit(dict, b);
   }
 }
 
@@ -144,5 +145,13 @@ int main(int argc, char** argv) {
   c.print(cout);
   cout << c.countLeaves() << ' ' << c.countCells() << ' ' << c.getMaxLevel() << endl;;
   printGrid(D);
+  
+  set<CellId<DIM> > S;
+  c.gatherHyperplanes(S, c.getMaxLevel());
+  for(auto el : S) {
+    cout << ")" << el << endl;
+  }
+  
+  
   return 0;
 }
