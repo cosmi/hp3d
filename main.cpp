@@ -31,12 +31,16 @@ int main(int argc, char** argv) {
   cout << D << endl;
   cout << "####" << endl;
   
-  int lvl = 4;
+  int lvl = 2;
   int offset = 1<<lvl;
-  FOR(i, offset) {
-    ensureSplit(D, CellId<DIM>({offset+i, offset+4}));
-  }
+  // FOR(i, offset) {
+  //   ensureSplit(D, CellId<DIM>({offset+i, offset+4}));
+  // }
+  ensureSplit(D, CellId<DIM>({offset, offset}));
+  auto nodes = calculateNodes(D);
   
+  cout << nodes << endl;
+  printGrid(nodes, lvl+2);
   // ensureSplit(D, target);
   cout << "####" << endl;
   cout << D;
@@ -56,15 +60,15 @@ int main(int argc, char** argv) {
   CellDict<DIM> D1;
   D1.addCell(&c);
   
-  pair<CellDict<DIM>, CellDict<DIM> > r = D1.divideByHyperplane(Hyperplane<DIM>(1, 0x15, 4));
-  cout << "1] " << r.first << endl;
-  cout << "2] " << r.second << endl;
-  
-  r.first.complete();
-  r.second.complete();
-  cout << "1] " << r.first << endl;
-  cout << "2] " << r.second << endl;
-  printGrid(r.first, lvl);
-  printGrid(r.second, lvl);
+  // pair<CellDict<DIM>, CellDict<DIM> > r = D1.divideByHyperplane(Hyperplane<DIM>(1, 0x15, 4));
+//   cout << "1] " << r.first << endl;
+//   cout << "2] " << r.second << endl;
+//
+//   r.first.complete();
+//   r.second.complete();
+//   cout << "1] " << r.first << endl;
+//   cout << "2] " << r.second << endl;
+//   printGrid(r.first, lvl);
+//   printGrid(r.second, lvl);
   return 0;
 }

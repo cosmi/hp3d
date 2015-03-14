@@ -23,11 +23,16 @@ class Supernode {
   using Plane = Hyperplane<DIMS>;
   Id id;
   int dimtype;
-  int relCount;
+  int boundsDim;
 public:
-  Supernode(const Id& a,int dimtype):id(a.toCanonical()),dimtype(dimtype), relCount(1<<(DIMS - dimtype)) {
+  Supernode(const Id& a,int dimtype):id(a.toCanonical()),dimtype(dimtype), boundsDim(0) {
     assert(dimtype <= DIMS);
     
+  }
+  Supernode withBoundsDim(int dim) {
+    Supernode s(*this);
+    s.boundsDim = dim;
+    return s;
   }
   
   int getType() const {
@@ -36,19 +41,23 @@ public:
   const Id& getId() const {
     return id;
   }
-  int getRelCount() const {
-    return relCount;
+  int getBoundsDim() const {
+    return boundsDim;
   }
   int getLevel() const {
     return id.getLevel();
   }
+  int isComplete(int hits) const {
+    return (hits<<boundsDim == 1<<DIMS);
+  }
   
   bool operator<(const Supernode& n) const {
     if(id != n.id) return id < n.id;
-    return dimtype < n.dimtype;
+    if(dimtype != n.dimtype) return dimtype < n.dimtype;
+    return boundsDim < n.boundsDim;
   }
   
-  int countBoundaryHyperplanes(const CellBounds<DIMS>& b) const {
+  int countBoundsHyperplanes(const CellBounds<DIMS>& b) const {
     return b.countHyperplanes(id);
   }
   
@@ -60,7 +69,7 @@ public:
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const Supernode<DIMS>& node) {
-  os << '{' << node.getType() << '#' << node.getId() << '(' << node.getRelCount() << ')' <<'}';
+  os << '{' << node.getType() << '#' << node.getId() << '(' << node.getBoundsDim() << ')' <<'}';
   return os;
 }
 
@@ -115,19 +124,85 @@ vector<Supernode<DIMS> > inducedNodes(Cell<DIMS> cell) {
   return V; 
 }
 
-template <int DIMS>
-ostream& operator<<(ostream& os, const vector<Supernode<DIMS> >& nodes) {
-  os << "[[VEC:";
+template <typename Container>
+void printCollectionToStream(ostream& os, const Container& nodes, const char* prefix) {
+  os << "[[" << prefix << ":";
   for(auto el: nodes) {
     os << el << " ";
   }
   os << "]]";
+}
+
+template<int DIMS>
+ostream& operator<<(ostream& os, const set<Supernode<DIMS> > S) {
+  printCollectionToStream(os, S, "SET");
+  return os;
+}
+template<int DIMS>
+ostream& operator<<(ostream& os, const vector<Supernode<DIMS> > S) {
+  printCollectionToStream(os, S, "VEC");
   return os;
 }
 
 template <int DIMS>
-set<Supernode<DIMS> > calculateNodes(CellDict<DIMS> dict) {
+set<Supernode<DIMS> > calculateNodes(const CellDict<DIMS>& dict) {
+  auto bounds = dict.getBounds();
   
-  
+  map<CellId<DIMS>, pair<int,int> > M;
+  cout << "BOUNDS " << bounds << endl;
+  for(auto it : dict) if(it.second->isLeaf()) {
+    auto & cell = *(it.second);
+    auto nodes = inducedNodes(cell);
+    for(auto node : nodes) {
+      // int boundsDim = node.countBoundsHyperplanes(bounds);
+      // auto n = node.withBoundsDim(boundsDim);
+      // cout<< "ADD " << node << " " << node.boundsDim << endl;
+//      hits[]+=;
+      auto& p = M[node.getId()];
+      p.first += 1<<node.getType(); // number of hits 
+      p.second = max(p.second, node.getType()); // type of node
+    }
+  }
+  set<Supernode<DIMS> > S;
+  for(auto it : M) {
+    auto id = it.first;
+    int hits = it.second.first;
+    int type = it.second.second;
+    int boundaryHits = bounds.countHyperplanes(id);
+    auto node = Supernode<DIMS>(id, type).withBoundsDim(boundaryHits);
+    if(node.isComplete(hits)) {
+      S.insert(node);
+    } else {
+      // S.insert(node);
+      cout << "ELIMINATED: " << node << " ONLY " << hits << " HITS "<< endl;
+    }
+  }
+  return S;
+}
+
+
+template<int DIMS>
+void printGrid(set<Supernode<DIMS> > & S, int lvl) {
+  const int MAXP = 34;
+  char buff [MAXP+1][MAXP+1];
+  FOR(i, MAXP+1) {
+    FOR(j, MAXP+1) buff[i][j]=(j==MAXP || i==MAXP)?0:' ';
+  }
+
+  int offset = 1<<lvl;
+  for (auto el : S) {
+    auto c = el.getId().withLevel(lvl);
+    
+    // cout << *c << " " << c1 << " " << c2 << endl;
+    
+    int x = c[0]-offset;
+    int y = c[1]-offset;
+    if(x>=MAXP || y >= MAXP) continue;
+    // cout << "+ " << x << ", " << y <<endl;
+    buff[x][y] = '*';    
+  }
+  FOR(i, MAXP) {
+    cout << buff[i] << endl;
+  }
 }
 

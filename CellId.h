@@ -215,6 +215,12 @@ public:
     }
     return true;
   }
+  bool operator!=(const CellId<DIMS>& d) const {
+    FOR(i, DIMS) {
+      if(id[i] != d[i]) return true;
+    }
+    return false;
+  }
   
   CellId toCanonical() const {
     int tgtLvl = lvl;

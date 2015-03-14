@@ -86,6 +86,13 @@ public:
   }
   
   int countHyperplanes(Id id) const {
+    int delta = id.getLevel() - getLevel();
+    if(delta>0) {
+      return this->withLevel(id.getLevel()).countHyperplanes(id);
+    } if(delta < 0) {
+      id = id.withLevel(getLevel());
+    }
+
     int count = 0;
     FOR(i, DIMS) {
       if(a[i] == id[i] || b[i] == id[i]) count++;
