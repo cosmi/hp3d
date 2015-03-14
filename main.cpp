@@ -11,6 +11,7 @@
 
 using namespace std;
 #include "CellId.h"
+// #include "CellBounds.h"
 #include "Cell.h"
 
 template <int DIMS>
@@ -32,7 +33,7 @@ public:
     return it->second;
   }
 
-  pair<CellDict, CellDict> divideByHyperplane(CellId<DIMS> hyperplane) const {
+  pair<CellDict, CellDict> divideByHyperplane(Hyperplane<DIMS> hyperplane) const {
     pair<CellDict, CellDict> res;
     cout << hyperplane << "!!!" << endl;
     for(auto el : *this) {
@@ -145,7 +146,7 @@ void printGrid(CellDict<DIMS> & dict, int lvl) {
   }
 }
 template<int DIMS>
-void Cell<DIMS>::divideByHyperplane(Id hyperplane, Dict& a, Dict& b){
+void Cell<DIMS>::divideByHyperplane(Plane hyperplane, Dict& a, Dict& b){
   cout << *this << " hyp:" << hyperplane << " CROSS:" << crossesHyperplane(hyperplane) << endl;
   if(crossesHyperplane(hyperplane)) {
     assert(!isLeaf());
@@ -193,8 +194,8 @@ int main(int argc, char** argv) {
   int maxLvl = c.getMaxLevel() + 1;
   printGrid(D, lvl);
   
-  set<CellId<DIM> > S;
-  map<CellId<DIM>, set<CellId<DIM> > > cache;
+  set<Hyperplane<DIM> > S;
+  map<CellId<DIM>, set<Hyperplane<DIM> > > cache;
   c.gatherHyperplanes(S, c.getMaxLevel(), cache);
   for(auto el : S) {
     cout << ")" << el << endl;
@@ -202,7 +203,7 @@ int main(int argc, char** argv) {
   CellDict<DIM> D1;
   D1.addCell(&c);
   
-  pair<CellDict<DIM>, CellDict<DIM> > r = D1.divideByHyperplane(CellId<DIM>({0, 0x15}, 4));
+  pair<CellDict<DIM>, CellDict<DIM> > r = D1.divideByHyperplane(Hyperplane<DIM>(1, 0x15, 4));
   cout << "1] " << r.first << endl;
   cout << "2] " << r.second << endl;
   

@@ -22,8 +22,9 @@ class CellDict;
 
 template<int DIMS>
 class Cell {
-  typedef CellId<DIMS> Id;
-  typedef CellDict<DIMS> Dict;
+  using Id = CellId<DIMS>;
+  using Dict = CellDict<DIMS>;
+  using Plane = Hyperplane<DIMS>;
   Id id;
   Cell<DIMS>* subs[1<<DIMS];
   
@@ -127,21 +128,14 @@ public:
   
   void shallowGatherIn(CellDict<DIMS>& map);
   
-  bool isHyperplaneOffBounds(const Id& c) const {
+  bool isHyperplaneOffBounds(const Plane& c) const {
     Id c1 = getZeroCornerAt(c.getLevel());
     Id c2 = getLastCornerAt(c.getLevel());
-    int zeros = 0;  
-    FOR(i, DIMS) {
-      if(c[i] == 0) {
-        zeros++;
-      } else {
-        if(c[i]>c1[i] && c[i]<c2[i]) return false;
-      }
-    }
-    assert(zeros == DIMS-1);
-    return true;
+    int dim = c.getDim();
+    auto val = c.getValue();
+    return !(c1[dim] < val && val < c2[dim]);
   }
-  bool isValidHyperplane(const Id& c) const{
+  bool isValidHyperplane(const Plane& c) const{
     if(isHyperplaneOffBounds(c)) {
       return true;
     }
@@ -157,20 +151,13 @@ public:
     }
   }
   
-  void gatherHyperplanes(set<Id>& V, int lvl, map<Id, set<Id> >& cache) const {
+  void gatherHyperplanes(set<Plane>& V, int lvl, map<Id, set<Plane> >& cache) const {
     cout << "REC " << *this << " " << lvl << endl;
     if(isLeaf() || lvl == this->getLevel()) {
-      // Id c1 = getZeroCornerAt(lvl);
-      // Id c2 = getLastCornerAt(lvl);
-      // FOR(i, DIMS) {
-      //   cout << "INS " << c1.getHyperplane(i) << " " << c2.getHyperplane(i) << endl;
-      //   V.insert(c1.getHyperplane(i));
-      //   V.insert(c2.getHyperplane(i));
-      // }
     } else {
-      set<Id> & hyperplanes = cache[getId()];
+      set<Plane> & hyperplanes = cache[getId()];
       if(hyperplanes.empty()) {
-        set<Id> V1;
+        set<Plane> V1;
         Id c = getId().increaseLevelBy(1).offsetBinary((1<<DIMS)-1);
         FOR(i, DIMS) {
           V1.insert(c.getHyperplane(i).withLevel(lvl));
@@ -191,23 +178,21 @@ public:
     }
     
   }
-  bool overHyperplane(Id hyperplane) const {
-    FOR(i, DIMS) {
-      if(hyperplane[i] == 0) continue;
-      Id c = getId().withLevel(hyperplane.getLevel());
-      return c[i] >= hyperplane[i];
-    }
+  bool overHyperplane(Plane hyperplane) const {
+    int dim = hyperplane.getDim();
+    Id c = getId().withLevel(hyperplane.getLevel());
+    return c[dim] >= hyperplane.getValue();
   }
-  bool crossesHyperplane(Id hyperplane) const {
-    Id c1 = getZeroCornerAt(hyperplane.getLevel()).withLevel(hyperplane.getLevel());
-    Id c2 = getLastCornerAt(hyperplane.getLevel()).withLevel(hyperplane.getLevel());
-    FOR(i, DIMS) {
-      if(hyperplane[i] == 0) continue;
-      return hyperplane[i] > c1[i] && hyperplane[i] < c2[i];
-    }
+  bool crossesHyperplane(Plane hyperplane) const {
+    int targetLvl = hyperplane.getLevel();
+    Id c1 = getZeroCornerAt(targetLvl);
+    Id c2 = getLastCornerAt(targetLvl);
+    int dim = hyperplane.getDim();
+    auto val = hyperplane.getValue();
+    return c1[dim] < val && val < c2[dim];
   }
   
-  void divideByHyperplane(Id hyperplane, Dict& a, Dict& b);
+  void divideByHyperplane(Plane hyperplane, Dict& a, Dict& b);
   
   
 };

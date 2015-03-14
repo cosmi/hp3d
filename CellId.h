@@ -23,6 +23,49 @@ string printBinary(id_int x, int digits) {
   return s;
 }
 
+template<int DIMS>
+class Hyperplane {
+  id_int val;
+  int dim;
+  int lvl;
+public:
+  Hyperplane(int dim, id_int val, int lvl):val(val), dim(dim), lvl(lvl){}
+  id_int getValue() const {
+    return val;
+  }
+  int getDim() const {
+    return dim;
+  }
+  int getLevel() const {
+    return lvl;
+  }
+  Hyperplane withLevel(int targetLvl) const {
+    int delta = targetLvl-lvl;
+    return Hyperplane(dim, val<<delta, targetLvl);
+  }
+  bool operator<(const Hyperplane& hp) const {
+    if(dim != hp.dim) {
+      return dim < hp.dim;
+    }
+    if(lvl != hp.lvl) {
+      return lvl < hp.lvl;
+    }
+    return val < hp.val;
+  }
+  
+};
+
+template <int DIMS>
+ostream& operator<<(ostream& os, const Hyperplane<DIMS>& hp) {
+  os << "H";
+  int dim = hp.getDim();
+  FOR(i, DIMS) {
+    if(i > 0) os << ':';
+    if(i == dim) os << printBinary(hp.getValue(), hp.getLevel()+2);
+    else os << '?';
+  }
+  return os;
+}
 
 
 
@@ -141,27 +184,27 @@ public:
     return true;
   }
   
-  bool isValidHyperplaneId() const {
-    id_int minv = 1<<getLevel();
-    id_int maxv = 1<<(getLevel()+1);
-    int zeros = 0;
-    FOR(i, DIMS) {
-      if(id[i] == 0) {
-        zeros++;
-      } else if(id[i] < minv || id[i] >= maxv) {
-        return false;
-      }
-    }
-    return zeros == DIMS-1;
-  }
-  CellId getHyperplane(int dim) {
-    CellId c;
-    c.lvl = this->lvl;
-    FOR(i, DIMS) {
-      c[i] = 0;
-    }
-    c[dim] = id[dim];
-    return c;
+  // bool isValidHyperplaneId() const {
+//     id_int minv = 1<<getLevel();
+//     id_int maxv = 1<<(getLevel()+1);
+//     int zeros = 0;
+//     FOR(i, DIMS) {
+//       if(id[i] == 0) {
+//         zeros++;
+//       } else if(id[i] < minv || id[i] >= maxv) {
+//         return false;
+//       }
+//     }
+//     return zeros == DIMS-1;
+//   }
+  Hyperplane<DIMS> getHyperplane(int dim) {
+    // CellId c;
+//     c.lvl = this->lvl;
+//     FOR(i, DIMS) {
+//       c[i] = 0;
+//     }
+//     c[dim] = id[dim];
+    return Hyperplane<DIMS>(dim, id[dim], lvl);
   }
   
   CellId getParentId() const {
