@@ -162,37 +162,37 @@ result_int calcCost(int singDims, int lvl) {
 
 void outputResultsForSingularities() {
   
-
-  FOR(dim, 1) {
-    FOR(lvl, 5) {
-      cout << "D:\t1\t";
-      cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<1>(dim,lvl) << endl;
-    }
-  }
-  
+  //
+  // FOR(dim, 1) {
+  //   FOR(lvl, 5) {
+  //     cout << "D:\t1\t";
+  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<1>(dim,lvl) << endl;
+  //   }
+  // }
+  //
   cout << endl;
-  FOR(dim, 3) {
-    FOR(lvl, 5) {
+  FOR(dim, 2) {
+    FOR(lvl, 7) {
       cout << "D:\t2\t";
       cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<2>(dim,lvl) << endl;
     }
   }
-  
-  cout << endl;
-  FOR(dim, 4) {
-    FOR(lvl, min(5, 7-dim)) {
-      cout << "D:\t3\t";
-      cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<3>(dim,lvl) << endl;
-    }
-  }
-  
-  cout << endl;
-  FOR(dim, 5) {
-    FOR(lvl, min(5, 6-dim)) {
-      cout << "D:\t4\t";
-      cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<4>(dim,lvl) << endl;
-    }
-  }
+   //
+  // cout << endl;
+  // FOR(dim, 4) {
+  //   FOR(lvl, min(5, 7-dim)) {
+  //     cout << "D:\t3\t";
+  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<3>(dim,lvl) << endl;
+  //   }
+  // }
+  //
+  // cout << endl;
+  // FOR(dim, 5) {
+  //   FOR(lvl, min(5, 6-dim)) {
+  //     cout << "D:\t4\t";
+  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<4>(dim,lvl) << endl;
+  //   }
+  // }
 }
 
 void sampleCalc() {
@@ -208,16 +208,16 @@ void sampleCalc() {
 
 
 int main(int argc, char** argv) {
-  FOR(i , 11) {
-    FOR(j, 11) {
-      cout << flopsFun(i, j) << '\t';
-    }
-    cout << endl;
-  } 
-  
-  cout << "MAM:" << flopsFun(6, 9) << endl;
-  sampleCalc();
-  // outputResultsForSingularities();
+  // FOR(i , 11) {
+  //   FOR(j, 11) {
+  //     cout << flopsFun(i, j) << '\t';
+  //   }
+  //   cout << endl;
+  // }
+  //
+  // cout << "MAM:" << flopsFun(6, 9) << endl;
+  // sampleCalc();
+  outputResultsForSingularities();
   //
   // Cell<DIM> c;
   // cerr << c.getId() << " <> BNDS:" << c.getBounds() << endl;
