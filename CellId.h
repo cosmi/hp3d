@@ -126,6 +126,15 @@ public:
     c.lvl = lvl;
     return c;
   }
+  CellId negativeOffsetBinary(size_t moveBy) const {
+    CellId c;
+    FOR(i, DIMS) {
+      int offset = (moveBy&(1<<i))!=0?1:0;
+      c[i] = id[i] - offset;
+    }
+    c.lvl = lvl;
+    return c;
+  }
   CellId getChildId(size_t childId) const {
     return this->increaseLevelBy(1).offsetBinary(childId);
   }
@@ -260,6 +269,14 @@ public:
     return (id[dim] - hp.getValue());
   }
   
+  vector<CellId> getNeighborsToCorner() const {
+    vector<CellId> V;
+    V.reserve(1<<DIMS);
+    FOR(i, 1<<DIMS) {
+      V.push_back(this->negativeOffsetBinary(i));
+    }
+    return V;
+  }
 };
 
 template <int DIMS>

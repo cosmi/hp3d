@@ -21,12 +21,15 @@ template<int DIMS>
 class Supernode {
   using Id = CellId<DIMS>;
   using Plane = Hyperplane<DIMS>;
-  Id id;
-  int dimtype;
+  Id a, b;
   int boundsDim;
 public:
-  Supernode(const Id& a,int dimtype):id(a.toCanonical()),dimtype(dimtype), boundsDim(0) {
+  Supernode(const Id& a,const Id& b):a(a.toCanonical()), b(b.toCanonical()), boundsDim(0) {
     assert(dimtype <= DIMS);
+    
+    int lvl = min(a.getLevel(), b.getLevel());
+    a = a.withLevel(lvl);
+    b = b.withLevel(lvl);
     
   }
   Supernode withBoundsDim(int dim) {
@@ -36,10 +39,19 @@ public:
   }
   
   int getType() const {
-    return dimtype;
+    int count = DIMS;
+    FOR(i,DIMS) {
+      if(a[i] == b[i]) {
+        count--;
+      }
+    }
+    return count;
   }
-  const Id& getId() const {
-    return id;
+  const Id& getFrom() const {
+    return a;
+  }
+  const Id& getTo() const {
+    return a;
   }
   int getBoundsDim() const {
     return boundsDim;
@@ -52,15 +64,27 @@ public:
   }
   
   bool operator<(const Supernode& n) const {
-    if(id != n.id) return id < n.id;
-    if(dimtype != n.dimtype) return dimtype < n.dimtype;
+    if(a != n.a) return a < n.a;
+    if(b != n.b) return b < n.b;
     return boundsDim < n.boundsDim;
   }
   
   int countBoundsHyperplanes(const CellBounds<DIMS>& b) const {
     return b.countHyperplanes(id);
   }
-  
+  vector<Id> getElements() const {
+    vector<Id> V1 = from.getNeighborsToCorner();
+    vector<Id> V2 = to.getNeighborsToCorner();
+    sort(V1.begin(), V1.end());
+    sort(V2.begin(), V2.end());
+    vector<Id> res(1<<(DIMS-getType()));
+    auto end = set_intersection(V1.begin(), V1.end(), V2.begin(), V2.end(), res);
+    assert(end == res.end());
+    return res;
+  }
+  Supernode getParent() const {
+    return Supernode(from.getParentId(), to.offsetBinary((1<<DIMS)-1).getParentId());
+  }
 };
 
 
@@ -69,7 +93,7 @@ public:
 
 template <int DIMS>
 ostream& operator<<(ostream& os, const Supernode<DIMS>& node) {
-  os << '{' << node.getType() << '#' << node.getId() << '(' << node.getBoundsDim() << ')' <<'}';
+  os << '{' << node.getType() << '#' << node.getFrom() << "->" << node.getTo() << '(' << node.getBoundsDim() << ')' <<'}';
   return os;
 }
 
@@ -78,15 +102,13 @@ ostream& operator<<(ostream& os, const Supernode<DIMS>& node) {
 
 vector<Supernode<1> > inducedNodes(Cell<1> cell) {
   vector<Supernode<1> > V;
-  V.push_back(Supernode<1>(cell.getZeroCornerAt(cell.getLevel()), 0));
-  V.push_back(Supernode<1>(cell.getLastCornerAt(cell.getLevel()), 0));
+  auto zero = cell.getZeroCornerAt(cell.getLevel());
+  auto last = cell.getLastCornerAt(cell.getLevel())
+  V.push_back(Supernode<1>(zero, zero));
+  V.push_back(Supernode<1>(last, last));
   V.push_back(
     Supernode<1>(
-      middle(
-        cell.getZeroCornerAt(cell.getLevel()),
-        cell.getLastCornerAt(cell.getLevel())
-      ),
-      1
+      zero, last
     )
   );
              
@@ -110,14 +132,7 @@ vector<Supernode<DIMS> > inducedNodes(Cell<DIMS> cell) {
       const Id& d = cell.getCornerId(j);
       if(!c.isNotLargerThan(d)) continue;
       int dimtype = DIMS - countCommonHyperplanes(c,d);
-      V.push_back(
-        Node(
-          middle(
-            c,d
-          ),
-          dimtype
-        )
-      );
+      V.push_back(Node(c, d));
     }
   }
   

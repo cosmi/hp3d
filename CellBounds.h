@@ -39,14 +39,27 @@ public:
   }
   
   bool isInternal(const Id& id) const {
+    // (a,b) bounds
+    assert(id.getLevel() == this.getLevel());
     FOR(i, DIMS) {
       if(a[i] >= id[i] || b[i] <= id[i]) return false;
     }
     return true;
   }
   bool isInBounds(const Id& id) const {
+    // [a,b] bounds
+    assert(id.getLevel() == this.getLevel());
     FOR(i, DIMS) {
       if(a[i] > id[i] || b[i] < id[i]) return false;
+    }
+    return true;
+  }
+  
+  bool isInCellBounds(const Id& id) const {
+    // [a,b) bounds
+    assert(id.getLevel() == this.getLevel());
+    FOR(i, DIMS) {
+      if(a[i] > id[i] || b[i] <= id[i]) return false;
     }
     return true;
   }
