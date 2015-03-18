@@ -99,16 +99,16 @@ void Cell<DIMS>::shallowGatherIn(CellDict<DIMS> & dict) {
 template <int DIMS>
 void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
 
-  cerr << "?ENS " << id << endl;
+  // cerr << "?ENS " << id << endl;
   if(id.isRoot()) return;
   if(dict.getCell(id) != NULL) return;
   
   auto parent = id.getParentId();
 
-  cerr << "ENS " << id << endl;
+  // cerr << "ENS " << id << endl;
   ensureSplit(dict, parent);
 
-  cerr << "ENS! " << id << endl;
+  // cerr << "ENS! " << id << endl;
   
   Cell<DIMS> * c = dict.getCell(parent);
   
@@ -118,8 +118,8 @@ void ensureSplit(CellDict<DIMS> & dict, CellId<DIMS> id) {
   FOR(dim, DIMS) {
     auto a = parent.getMovedId(dim, -1);
     auto b = parent.getMovedId(dim, +1);
-    cerr << "nei: " << a << "'" << a.isValidCellId() << " " << endl;
-    cerr << "nei: " << b << "'" << b.isValidCellId() << " " << endl;
+    // cerr << "nei: " << a << "'" << a.isValidCellId() << " " << endl;
+    // cerr << "nei: " << b << "'" << b.isValidCellId() << " " << endl;
     if(a.isValidCellId()) ensureSplit(dict, a);
     if(b.isValidCellId()) ensureSplit(dict, b);
   }
@@ -164,7 +164,7 @@ void printGrid(const CellDict<DIMS> & dict, int lvl) {
 
 template<int DIMS>
 void Cell<DIMS>::divideByHyperplane(Plane hyperplane, Dict& a, Dict& b){
-  cerr << *this << " hyp:" << hyperplane << " CROSS:" << crossesHyperplane(hyperplane) << endl;
+  // cerr << *this << " hyp:" << hyperplane << " CROSS:" << crossesHyperplane(hyperplane) << endl;
   if(crossesHyperplane(hyperplane)) {
     assert(!isLeaf());
     FOR(i, subsCount()) {

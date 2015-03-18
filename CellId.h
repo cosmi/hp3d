@@ -72,7 +72,7 @@ ostream& operator<<(ostream& os, const Hyperplane<DIMS>& hp) {
 template<int DIMS>
 class CellId {
   id_int id[DIMS];
-  size_t lvl;
+  int lvl;
 public:
 
   CellId(const CellId&) = default;
@@ -114,7 +114,7 @@ public:
     id[dim] += move;
   }
 
-  size_t getLevel() const {
+  int getLevel() const {
     return lvl;
   }
   bool isRoot() const {
@@ -134,7 +134,6 @@ public:
     CellId c;
     FOR(i, DIMS) {
       int offset = (moveBy&(1<<i))!=0?1:0;
-      // cerr << id[i] << " - " << offset << endl;
       assert(id[i] >= offset);
       
       c[i] = id[i] - offset;
@@ -165,6 +164,7 @@ public:
     return c;
   }
   CellId decreaseLevelBy(int lvls) const {
+    assert(lvls<=lvl);
     CellId c = *this;
     c.lvl-=lvls;
     FOR(i, DIMS) {
@@ -204,7 +204,8 @@ public:
   }
   
   CellId getParentId() const {
-
+    // cerr << "ID " << *this << endl;
+    assert(lvl > 0);
     CellId c;
     FOR(i, DIMS) {
       c[i] = id[i] >> 1;
@@ -217,6 +218,7 @@ public:
     int digits = getLevel() + 2;
     FOR(i, DIMS) {
       if(i > 0) cerr << ":";
+      cerr << lvl << '$';
       cerr << id[i] << '&';
       cerr << printBinary(id[i], digits);
     }
@@ -225,39 +227,43 @@ public:
     FOR(i, DIMS) {
       if(id[i] != d[i]) return id[i] < d[i];
     }
-    return false;
+    return lvl < d.lvl;
   }
   bool operator==(const CellId<DIMS>& d) const {
     FOR(i, DIMS) {
       if(id[i] != d[i]) return false;
     }
-    return true;
+    return lvl == d.lvl;
   }
   bool operator!=(const CellId<DIMS>& d) const {
     FOR(i, DIMS) {
       if(id[i] != d[i]) return true;
     }
-    return false;
+    return lvl != d.lvl;
   }
   
   CellId toCanonical() const {
     int tgtLvl = lvl;
-    while(tgtLvl > 0) {
+    for(int i = 1; i<=lvl; i++) {
       bool okay = true;
-      int delta = lvl - tgtLvl + 1;
-      int mask = (1<<delta)-1;
-      FOR(i, DIMS) {
-        if(mask & id[i]) {
-          okay=false;
-          break;
+      int mask = (1<<i)-1;
+      bool atLeastOnce = false;
+      FOR(j, DIMS) {
+        if(mask & id[j]) {
+          okay = false;
+        }
+        if(mask < id[i]) {
+          atLeastOnce = true;
         }
       }
-      if(okay) {
-        tgtLvl --;
-      } else {
+      if(!okay || !atLeastOnce) {
         break;
+      } else {
+        tgtLvl = lvl - i;
       }
     }
+    assert(lvl >= tgtLvl);
+    
     return decreaseLevelBy(lvl - tgtLvl);
   }
   

@@ -144,12 +144,16 @@ bool CellDict<DIMS>::isConstrained(const Supernode<DIMS>& node) const {
   int elCnt = 0;
   
   vector<CellId<DIMS> > V = node.getElements();
+  // cerr << "ELS " << V << endl;
   for(auto id : V) {
-    if(getCell(id)) elCnt++;
+    if(getCell(id)) {
+      // cerr << "CELL " << id << endl;
+      elCnt++;
+    }
   }
   
   bool constrained = !(elCnt == 1<<(DIMS-node.getType()-boundDims));
-  // cerr << "CONSTR: " << constrained << " " << "TYPE:" << node.getType() << " BOUND:" << boundDims << endl;
+  // cerr << "CONSTR: " << node << ": " <<constrained << " " << "TYPE:" << node.getType() << " BOUND:" << boundDims << " CNT:" <<elCnt<<endl;
   return constrained;
 }
 
@@ -173,6 +177,7 @@ set<Supernode<DIMS> > getDependentNodes(const CellId<DIMS>& id, const CellDict<D
       // cerr << "SUBS: " << subnodes << endl;
       for(auto subnode : subnodes) {
         while(dict.isConstrained(subnode)) {
+          // cerr << "CONSTR " << subnode << endl;;
           subnode = subnode.getParent();
         }
         nodes[dim+1].insert(subnode);

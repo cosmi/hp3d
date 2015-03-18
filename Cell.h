@@ -59,7 +59,7 @@ public:
     return id;
   }
   
-  const size_t getLevel() const {
+  int getLevel() const {
     return id.getLevel();
   }
   
