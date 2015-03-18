@@ -34,6 +34,14 @@ public:
     return b;
   }
   
+
+  const Id& getFrom() const {
+    return a;
+  }
+  const Id& getTo() const {
+    return b;
+  }
+  
   int getLevel() const {
     return a.getLevel();
   }

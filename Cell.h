@@ -22,10 +22,13 @@ class Supernode;
 
 template<int DIMS>
 class Cell {
+  Cell(const Cell&) = delete;
+  Cell & operator=(const Cell&) = delete;
   using Id = CellId<DIMS>;
   using Dict = CellDict<DIMS>;
   using Plane = Hyperplane<DIMS>;
   using Bounds = CellBounds<DIMS>;
+  using Node = Supernode<DIMS>;
   Id id;
   Cell<DIMS>* subs[1<<DIMS];
   
@@ -204,6 +207,9 @@ public:
   Bounds getBounds(int targetLvl = -1) const {
     if(targetLvl == -1) targetLvl = getLevel();
     return Bounds(getZeroCornerAt(targetLvl), getLastCornerAt(targetLvl));
+  }
+  Node getInnerNode() const {
+    return Node(getCornerId(0), getCornerId((1<<DIMS)-1));
   }
   Cell& getChild(int childId) {
     return *(subs[childId]);

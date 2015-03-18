@@ -74,6 +74,10 @@ class CellId {
   id_int id[DIMS];
   size_t lvl;
 public:
+
+  CellId(const CellId&) = default;
+  CellId & operator=(const CellId&) = default;
+  
   const id_int& operator[](size_t p) const {
     return id[p];
   }
@@ -130,6 +134,9 @@ public:
     CellId c;
     FOR(i, DIMS) {
       int offset = (moveBy&(1<<i))!=0?1:0;
+      // cerr << id[i] << " - " << offset << endl;
+      assert(id[i] >= offset);
+      
       c[i] = id[i] - offset;
     }
     c.lvl = lvl;
@@ -197,24 +204,26 @@ public:
   }
   
   CellId getParentId() const {
+
     CellId c;
     FOR(i, DIMS) {
       c[i] = id[i] >> 1;
     }
     c.lvl = getLevel() - 1;
+    // cerr << "TO PARENT: " << *this << " => " << c << endl;
     return c;
   }
   void print(ostream& cerr) const {
     int digits = getLevel() + 2;
     FOR(i, DIMS) {
       if(i > 0) cerr << ":";
+      cerr << id[i] << '&';
       cerr << printBinary(id[i], digits);
     }
   }
   bool operator< (const CellId<DIMS>& d) const {
     FOR(i, DIMS) {
-      if(id[i] < d[i]) return true;
-      else if(id[i] > d[i]) return false;
+      if(id[i] != d[i]) return id[i] < d[i];
     }
     return false;
   }
@@ -254,7 +263,7 @@ public:
   
   bool isNotLargerThan(const CellId& c) const {
     FOR(i, DIMS) {
-      if(c[i]<id[i]) return false;
+      if(c[i] < id[i]) return false;
     }
     return true;
   }

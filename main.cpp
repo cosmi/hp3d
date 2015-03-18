@@ -12,6 +12,9 @@
 #define R(a) (a).begin(), (a).end()
 
 using namespace std;
+
+template<int DIMS>
+class Supernode;
 #include "CellId.h"
 #include "CellBounds.h"
 #include "Cell.h"
@@ -27,187 +30,188 @@ result_int flopsFun(result_int a, result_int b) {
   //   res << endl;
   return res;
 }
-
-template <int DIMS>
-result_int calculateHalfDivCost(const CellDict<DIMS>& dict, const set<Supernode<DIMS> >& nodes) {
-  // using Dict = CellDict<DIMS>;
-  auto& bounds = dict.getBounds();
-  auto hp = bounds.getHalvingPlane();  
-  cerr << endl << "IN " << bounds << " DIV " << hp << endl;
-  printGrid(dict, 5);
- cerr << "NODES " << nodes << endl;
-  
-  int external = 0;
-  int reduced = 0;
-  int internal = 0;
-  
-  
-  if(dict.size() == 1) {
-    for(auto& el : nodes) {
-
-      if(bounds.isInternal(el.getId())) {
-        // reduced here at this point
-        reduced++;
-      } else /* is on boundary */ {      
-        int faces = bounds.countHyperplanes(el.getId());
-        if(faces == el.getBoundsDim()) {
-          // is on external boundary and reduced at this point
-          reduced++;
-        } else {
-          // is on not external boundary and cannot be reduced here
-          external++;
-        }
-      }
-    }
-    cerr <<"LEAF === " << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
-  
-    result_int res = flopsFun(reduced, reduced + external);
-    cerr << "ELIMINATION-COST:" << res << endl;
-    return res;
-  }
-  
-  for(auto& el : nodes) {
-    int cmp = el.getId().compareWithHyperplane(hp);
-    if(bounds.isInternal(el.getId())) {
-      if(cmp == 0) {
-        // internal node that is reduced in this step
-        reduced++;
-      } else {
-        // internal node reduced recursively
-        internal++;
-      }
-    } else /* is on boundary */ {
-      
-      int faces = bounds.countHyperplanes(el.getId());
-      if(faces == el.getBoundsDim()) {
-        if(cmp == 0) {
-          // is on external boundary and reduced here
-          reduced++;
-        } else {
-          // is on external boundary and reduced recursively
-          internal++;
-        }
-      } else {
-        if(cmp == 0) {
-          // is on not external boundary and cannot be reduced here
-          external++;
-        } else {
-          // is on not external boundary and cannot be reduced here
-          external++;
-        }
-      }
-    }
-  }
-  
-  cerr << "INTERNAL:" << internal << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
-  
-  result_int res = flopsFun(reduced, reduced + external);
-  cerr << "ELIMINATION-COST:" << res << endl;
-  
-  auto dicts = dict.divideByHyperplane(hp);
-  auto nds = divideByHyperplane(nodes, hp);
-  
-  // cerr << "DICTS " << dicts.first << " AND " << dicts.second << endl;
-//   cerr << "NODES " << nds.first << " AND " << nds.second << endl;
 //
-  auto a = calculateHalfDivCost(dicts.first, nds.first);
-  auto b = calculateHalfDivCost(dicts.second, nds.second);
-  
-  return res + a + b;
-}
-
-
-template <int DIMS>
-result_int calculateHalfDivCost(const CellDict<DIMS>& dict) {
-  
-  auto nodes = calculateNodes(dict);
-  
-  cout << "NODES:\t" << nodes.size() ;
-  // cerr << nodes << endl;
-  printGrid(nodes, 6);
-  return calculateHalfDivCost(dict, nodes); 
-
-  
-  
-}
-
-
-template <int DIMS>
-void ensureSingularity(CellId<DIMS> id, CellDict<DIMS>& D, int singDims, int lvl, int dim) {
-  if(dim == singDims) {
-    cerr << "ENSURE " << id << endl;
-    ensureSplit(D, id);
-  } else {
-    FOR(i, 1<<lvl) {
-      ensureSingularity(id.getMovedId(dim, i), D, singDims, lvl, dim+1);
-    }
-  }
-}
-
-template <int DIMS>
-result_int calcCost(int singDims, int lvl) {
-   using Id = CellId<DIMS>;
-   Cell<DIMS> c;
-   CellDict<DIMS> D;
-   c.gatherIn(D);
-
-   Id id = c.getId();
-   
-   FOR(i, lvl) {
-     id = id.getChildId(0);
-   }
-   ensureSingularity(id, D, singDims, lvl, 0);
-   return calculateHalfDivCost(D);
-}
-
-void outputResultsForSingularities() {
-  
-  //
-  // FOR(dim, 1) {
-  //   FOR(lvl, 5) {
-  //     cout << "D:\t1\t";
-  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<1>(dim,lvl) << endl;
-  //   }
-  // }
-  //
-  cout << endl;
-  FOR(dim, 2) {
-    FOR(lvl, 7) {
-      cout << "D:\t2\t";
-      cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<2>(dim,lvl) << endl;
-    }
-  }
-   //
-  // cout << endl;
-  // FOR(dim, 4) {
-  //   FOR(lvl, min(5, 7-dim)) {
-  //     cout << "D:\t3\t";
-  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<3>(dim,lvl) << endl;
-  //   }
-  // }
-  //
-  // cout << endl;
-  // FOR(dim, 5) {
-  //   FOR(lvl, min(5, 6-dim)) {
-  //     cout << "D:\t4\t";
-  //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<4>(dim,lvl) << endl;
-  //   }
-  // }
-}
-
-void sampleCalc() {
-  const int DIMS = 2;
-  Cell<DIMS> c;
-  CellDict<DIMS> D;
-  c.split();
-  c.getChild(0).gatherIn(D);
-  c.getChild(1).gatherIn(D);
-  cout << "SET: " <<D.size() << " " << D << "!" << endl;
-  cout << "EXAMPLE RES: " << calculateHalfDivCost(D) << endl;
-}
-
+// template <int DIMS>
+// result_int calculateHalfDivCost(const CellDict<DIMS>& dict, const set<Supernode<DIMS> >& nodes) {
+//   // using Dict = CellDict<DIMS>;
+//   auto& bounds = dict.getBounds();
+//   auto hp = bounds.getHalvingPlane();
+//   cerr << endl << "IN " << bounds << " DIV " << hp << endl;
+//   printGrid(dict, 5);
+//  cerr << "NODES " << nodes << endl;
+//
+//   int external = 0;
+//   int reduced = 0;
+//   int internal = 0;
+//
+//
+//   if(dict.size() == 1) {
+//     for(auto& el : nodes) {
+//
+//       if(bounds.isInternal(el.getId())) {
+//         // reduced here at this point
+//         reduced++;
+//       } else /* is on boundary */ {
+//         int faces = bounds.countHyperplanes(el.getId());
+//         if(faces == el.getBoundsDim()) {
+//           // is on external boundary and reduced at this point
+//           reduced++;
+//         } else {
+//           // is on not external boundary and cannot be reduced here
+//           external++;
+//         }
+//       }
+//     }
+//     cerr <<"LEAF === " << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
+//
+//     result_int res = flopsFun(reduced, reduced + external);
+//     cerr << "ELIMINATION-COST:" << res << endl;
+//     return res;
+//   }
+//
+//   for(auto& el : nodes) {
+//     int cmp = el.getId().compareWithHyperplane(hp);
+//     if(bounds.isInternal(el.getId())) {
+//       if(cmp == 0) {
+//         // internal node that is reduced in this step
+//         reduced++;
+//       } else {
+//         // internal node reduced recursively
+//         internal++;
+//       }
+//     } else /* is on boundary */ {
+//
+//       int faces = bounds.countHyperplanes(el.getId());
+//       if(faces == el.getBoundsDim()) {
+//         if(cmp == 0) {
+//           // is on external boundary and reduced here
+//           reduced++;
+//         } else {
+//           // is on external boundary and reduced recursively
+//           internal++;
+//         }
+//       } else {
+//         if(cmp == 0) {
+//           // is on not external boundary and cannot be reduced here
+//           external++;
+//         } else {
+//           // is on not external boundary and cannot be reduced here
+//           external++;
+//         }
+//       }
+//     }
+//   }
+//
+//   cerr << "INTERNAL:" << internal << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
+//
+//   result_int res = flopsFun(reduced, reduced + external);
+//   cerr << "ELIMINATION-COST:" << res << endl;
+//
+//   auto dicts = dict.divideByHyperplane(hp);
+//   auto nds = divideByHyperplane(nodes, hp);
+//
+//   // cerr << "DICTS " << dicts.first << " AND " << dicts.second << endl;
+// //   cerr << "NODES " << nds.first << " AND " << nds.second << endl;
+// //
+//   auto a = calculateHalfDivCost(dicts.first, nds.first);
+//   auto b = calculateHalfDivCost(dicts.second, nds.second);
+//
+//   return res + a + b;
+// }
+//
+//
+// template <int DIMS>
+// result_int calculateHalfDivCost(const CellDict<DIMS>& dict) {
+//
+//   auto nodes = calculateNodes(dict);
+//
+//   cout << "NODES:\t" << nodes.size() ;
+//   // cerr << nodes << endl;
+//   printGrid(nodes, 6);
+//   return calculateHalfDivCost(dict, nodes);
+//
+//
+//
+// }
+//
+//
+// template <int DIMS>
+// void ensureSingularity(CellId<DIMS> id, CellDict<DIMS>& D, int singDims, int lvl, int dim) {
+//   if(dim == singDims) {
+//     cerr << "ENSURE " << id << endl;
+//     ensureSplit(D, id);
+//   } else {
+//     FOR(i, 1<<lvl) {
+//       ensureSingularity(id.getMovedId(dim, i), D, singDims, lvl, dim+1);
+//     }
+//   }
+// }
+//
+// template <int DIMS>
+// result_int calcCost(int singDims, int lvl) {
+//    using Id = CellId<DIMS>;
+//    Cell<DIMS> c;
+//    CellDict<DIMS> D;
+//    c.gatherIn(D);
+//
+//    Id id = c.getId();
+//
+//    FOR(i, lvl) {
+//      id = id.getChildId(0);
+//    }
+//    ensureSingularity(id, D, singDims, lvl, 0);
+//    return calculateHalfDivCost(D);
+// }
+//
+// void outputResultsForSingularities() {
+//
+//   //
+//   // FOR(dim, 1) {
+//   //   FOR(lvl, 5) {
+//   //     cout << "D:\t1\t";
+//   //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<1>(dim,lvl) << endl;
+//   //   }
+//   // }
+//   //
+//   cout << endl;
+//   FOR(dim, 2) {
+//     FOR(lvl, 7) {
+//       cout << "D:\t2\t";
+//       cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<2>(dim,lvl) << endl;
+//     }
+//   }
+//    //
+//   // cout << endl;
+//   // FOR(dim, 4) {
+//   //   FOR(lvl, min(5, 7-dim)) {
+//   //     cout << "D:\t3\t";
+//   //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<3>(dim,lvl) << endl;
+//   //   }
+//   // }
+//   //
+//   // cout << endl;
+//   // FOR(dim, 5) {
+//   //   FOR(lvl, min(5, 6-dim)) {
+//   //     cout << "D:\t4\t";
+//   //     cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<4>(dim,lvl) << endl;
+//   //   }
+//   // }
+// }
+//
+// void sampleCalc() {
+//   const int DIMS = 2;
+//   Cell<DIMS> c;
+//   CellDict<DIMS> D;
+//   c.split();
+//   c.getChild(0).gatherIn(D);
+//   c.getChild(1).gatherIn(D);
+//   cout << "SET: " <<D.size() << " " << D << "!" << endl;
+//   cout << "EXAMPLE RES: " << calculateHalfDivCost(D) << endl;
+// }
+//
 
 int main(int argc, char** argv) {
+  const int DIM = 2;
   // FOR(i , 11) {
   //   FOR(j, 11) {
   //     cout << flopsFun(i, j) << '\t';
@@ -217,10 +221,21 @@ int main(int argc, char** argv) {
   //
   // cout << "MAM:" << flopsFun(6, 9) << endl;
   // sampleCalc();
-  outputResultsForSingularities();
+  // outputResultsForSingularities();
   //
-  // Cell<DIM> c;
-  // cerr << c.getId() << " <> BNDS:" << c.getBounds() << endl;
+  Cell<DIM> c;
+  cerr << c.getId() << " <> BNDS:" << c.getBounds() << endl;
+  CellDict<DIM> D;
+  c.split();
+  c.getChild(0).split();
+  c.gatherIn(D);
+  cerr << D << endl;
+  
+  for(auto cell: D) {
+    if(!cell.second->isLeaf()) continue;
+    cerr << endl << endl << "CELL: " << *(cell.second) << endl;
+    cerr << getDependentNodes(cell.second->getId(), D) << endl;
+  }
   
   
  //

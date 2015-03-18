@@ -16,7 +16,9 @@ using namespace std;
 
 template <int DIMS>
 class CellDict: protected map<CellId<DIMS>, Cell<DIMS>* > {
-  using sourceMap = map<CellId<DIMS>, Cell<DIMS>* >;
+  using Id = CellId<DIMS>;
+  using sourceMap = map<Id, Cell<DIMS>* >;
+
   CellBounds<DIMS> bounds;
 public:
   typename sourceMap::const_iterator begin() const {return sourceMap::begin();}
@@ -57,6 +59,8 @@ public:
   void setBoundsLevel(int lvl) {
     bounds = bounds.withLevel(lvl);
   }
+  
+  bool isConstrained(const Supernode<DIMS>& node) const;
 };
 
 template <int DIMS>
