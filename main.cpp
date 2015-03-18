@@ -147,7 +147,7 @@ RetStruct<DIMS> calculateHalfDivCost(const CalcStruct<DIMS>& str, const CellDict
 template <int DIMS>
 result_int calculateNestedDissection(const CellDict<DIMS>& dict) {
   auto str = prepareStruct(dict);
-  
+  cout << str.counter.size() << '\t';
   // cerr << "STR" << endl;
     //
   // for(auto el: str.counter) {
@@ -200,13 +200,20 @@ void outputResultsForSingularities() {
   //   }
   // }
   //
-  cout << endl;
-  FOR(dim, 2) {
-    FOR(lvl, 7) {
-      cout << "D:\t2\t";
-      cout << "\tSINGULARITY-DIM:\t" << dim << "\tLVL:\t" << lvl << "\t" << calcCost<2>(dim,lvl) << endl;
-    }
+#define PRINT_FOR_DIM(DIM, MAX) \
+  FOR(dim, DIM) for(int lvl = 1;lvl < MAX; lvl++) { \
+    cout << DIM << '\t'; \
+    result_int cost = calcCost<DIM>(dim,lvl); \
+    cout << dim << '\t' << lvl << '\t' << cost << endl; \
   }
+
+  PRINT_FOR_DIM(1, 10);
+  PRINT_FOR_DIM(2, 10);
+  PRINT_FOR_DIM(3, 9-dim);
+  PRINT_FOR_DIM(4, 8-dim);
+  PRINT_FOR_DIM(5, 7-dim);
+  
+#undef PRINT_FOR_DIM
    //
   // cout << endl;
   // FOR(dim, 4) {
