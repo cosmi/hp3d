@@ -30,109 +30,123 @@ result_int flopsFun(result_int a, result_int b) {
   //   res << endl;
   return res;
 }
+
+template <int DIMS>
+using NodeCounter = map<Supernode<DIMS>, int>;
+template <int DIMS>
+using CellNodes = map<CellId<DIMS>, vector<Supernode<DIMS> > >;
+
+template<int DIMS>
+struct CalcStruct {
+  const CellDict<DIMS>& dict;
+  const CellNodes<DIMS> nodes;
+  const NodeCounter<DIMS> counter;
+};
+
+
+
+template <int DIMS>
+CalcStruct<DIMS> prepareStruct(const CellDict<DIMS>& dict) {
+  CellNodes<DIMS> nodes;
+  NodeCounter<DIMS> counter;
+  for(auto it: dict) {
+    auto & cell = *it.second;
+    if(!cell.isLeaf()) continue;
+    auto & vec = nodes[cell.getId()];
+    
+    auto S = getDependentNodes(cell.getId(), dict);
+    vec.insert(vec.end(), S.begin(), S.end());
+    for(auto node: S) {
+      counter[node]++;
+    }
+  }
+  return CalcStruct<DIMS>({dict, nodes, counter});
+  
+}
+
+template<int DIMS>
+struct RetStruct {
+  result_int cost;
+  NodeCounter<DIMS> selected;
+  
+};
+
+template<int DIMS>
+RetStruct<DIMS> calculateSingleElementCost(const CalcStruct<DIMS>& str, const CellDict<DIMS>& dict) {
+  using RetStruct = RetStruct<DIMS>;
+  assert(dict.size() == 1);
+  auto * cell = dict.begin()->second;
+  auto & nodes = str.nodes.find(cell->getId())->second;
+  RetStruct R;
+  
+  int eliminated = 0;
+  for(auto node : nodes) {
+    int v = 1;
+    if(v == str.counter.find(node)->second) {
+      eliminated++;
+    } else {
+      R.selected[node] = v;
+    }
+  }
+  R.cost = flopsFun(eliminated, R.selected.size() + eliminated);
+  return R;
+}
+
+template<int DIMS>
+RetStruct<DIMS> calculateHalfDivCost(const CalcStruct<DIMS>& str, const CellDict<DIMS>& dict) {
+  using RetStruct = RetStruct<DIMS>;
+  
+  if(dict.size() <= 1) {
+    return calculateSingleElementCost(str, dict);
+  }
+  
+  auto& bounds = dict.getBounds();
+  auto hp = bounds.getHalvingPlane();
+  cerr << endl << "IN " << bounds << " DIV " << hp << endl;
+  printGrid(dict, 5);
+
+  
+  auto dicts = dict.divideByHyperplane(hp);
+
+  RetStruct a = calculateHalfDivCost(str, dicts.first);
+  RetStruct b = calculateHalfDivCost(str, dicts.second);
+
+  RetStruct R;
+  for(auto el: a.selected) {
+    R.selected[el.first] += el.second;
+  }
+  for(auto el: b.selected) {
+    R.selected[el.first] += el.second;
+  }
+  int eliminated = 0;
+  for(auto it = R.selected.begin(); it != R.selected.end();) {
+    if(str.counter.find(it->first)->second == it->second) {
+      it = R.selected.erase(it);
+      eliminated++;
+    } else {
+      it++;
+    }
+  }
+
+  result_int res = flopsFun(eliminated, eliminated + R.selected.size());
+  cerr << "ELIMINATION-COST:" << res << endl;
+
+  R.cost = res + a.cost + b.cost;
+
+  // cerr << "DICTS " << dicts.first << " AND " << dicts.second << endl;
+//   cerr << "NODES " << nds.first << " AND " << nds.second << endl;
 //
-// template <int DIMS>
-// result_int calculateHalfDivCost(const CellDict<DIMS>& dict, const set<Supernode<DIMS> >& nodes) {
-//   // using Dict = CellDict<DIMS>;
-//   auto& bounds = dict.getBounds();
-//   auto hp = bounds.getHalvingPlane();
-//   cerr << endl << "IN " << bounds << " DIV " << hp << endl;
-//   printGrid(dict, 5);
-//  cerr << "NODES " << nodes << endl;
-//
-//   int external = 0;
-//   int reduced = 0;
-//   int internal = 0;
+  
+
+  return R;
+}
 //
 //
-//   if(dict.size() == 1) {
-//     for(auto& el : nodes) {
-//
-//       if(bounds.isInternal(el.getId())) {
-//         // reduced here at this point
-//         reduced++;
-//       } else /* is on boundary */ {
-//         int faces = bounds.countHyperplanes(el.getId());
-//         if(faces == el.getBoundsDim()) {
-//           // is on external boundary and reduced at this point
-//           reduced++;
-//         } else {
-//           // is on not external boundary and cannot be reduced here
-//           external++;
-//         }
-//       }
-//     }
-//     cerr <<"LEAF === " << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
-//
-//     result_int res = flopsFun(reduced, reduced + external);
-//     cerr << "ELIMINATION-COST:" << res << endl;
-//     return res;
-//   }
-//
-//   for(auto& el : nodes) {
-//     int cmp = el.getId().compareWithHyperplane(hp);
-//     if(bounds.isInternal(el.getId())) {
-//       if(cmp == 0) {
-//         // internal node that is reduced in this step
-//         reduced++;
-//       } else {
-//         // internal node reduced recursively
-//         internal++;
-//       }
-//     } else /* is on boundary */ {
-//
-//       int faces = bounds.countHyperplanes(el.getId());
-//       if(faces == el.getBoundsDim()) {
-//         if(cmp == 0) {
-//           // is on external boundary and reduced here
-//           reduced++;
-//         } else {
-//           // is on external boundary and reduced recursively
-//           internal++;
-//         }
-//       } else {
-//         if(cmp == 0) {
-//           // is on not external boundary and cannot be reduced here
-//           external++;
-//         } else {
-//           // is on not external boundary and cannot be reduced here
-//           external++;
-//         }
-//       }
-//     }
-//   }
-//
-//   cerr << "INTERNAL:" << internal << " REDUCED:" << reduced << " EXTERNAL:" << external << endl;
-//
-//   result_int res = flopsFun(reduced, reduced + external);
-//   cerr << "ELIMINATION-COST:" << res << endl;
-//
-//   auto dicts = dict.divideByHyperplane(hp);
-//   auto nds = divideByHyperplane(nodes, hp);
-//
-//   // cerr << "DICTS " << dicts.first << " AND " << dicts.second << endl;
-// //   cerr << "NODES " << nds.first << " AND " << nds.second << endl;
-// //
-//   auto a = calculateHalfDivCost(dicts.first, nds.first);
-//   auto b = calculateHalfDivCost(dicts.second, nds.second);
-//
-//   return res + a + b;
-// }
-//
-//
-// template <int DIMS>
-// result_int calculateHalfDivCost(const CellDict<DIMS>& dict) {
-//
-//   auto nodes = calculateNodes(dict);
-//
-//   cout << "NODES:\t" << nodes.size() ;
-//   // cerr << nodes << endl;
-//   printGrid(nodes, 6);
-//   return calculateHalfDivCost(dict, nodes);
-//
-//
-//
-// }
+template <int DIMS>
+result_int calculateNestedDissection(const CellDict<DIMS>& dict) {
+  auto str = prepareStruct(dict);
+  return calculateHalfDivCost(str, dict).cost;
+}
 //
 //
 // template <int DIMS>
@@ -237,7 +251,10 @@ int main(int argc, char** argv) {
     cerr << getDependentNodes(cell.second->getId(), D) << endl;
   }
   
+  auto str = prepareStruct(D);
+  cout << str.dict << endl;
   
+  cout << calculateNestedDissection(D) << endl;
  //
 //   int lvl = 2;
 //   int offset = 1<<lvl;
